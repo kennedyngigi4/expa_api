@@ -3,11 +3,10 @@ import json
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
-load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -16,7 +15,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY=os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS=[
     "127.0.0.1",
@@ -116,35 +115,35 @@ DATABASES = {
     },
     'accounts': {
         'ENGINE':'django.db.backends.postgresql',
-        'NAME':'expa_accounts',
-        'USER':'postgres',
-        'PASSWORD':'1234',
-        'HOST':'localhost',
-        'PORT': '5432'
+        'NAME': os.getenv('DB_ACCOUNTS'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT')
     },
     'logistics': {
         'ENGINE':'django.db.backends.postgresql',
-        'NAME':'expa_logistics',
-        'USER':'postgres',
-        'PASSWORD':'1234',
-        'HOST':'localhost',
-        'PORT': '5432'
+        'NAME': os.getenv('DB_LOGISTIC'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT')
     },
     'payments': {
         'ENGINE':'django.db.backends.postgresql',
-        'NAME':'expa_payments',
-        'USER':'postgres',
-        'PASSWORD':'1234',
-        'HOST':'localhost',
-        'PORT': '5432'
+        'NAME': os.getenv('DB_PAYMENTS'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT')
     },
     'messaging': {
         'ENGINE':'django.db.backends.postgresql',
-        'NAME':'expa_messaging',
-        'USER':'postgres',
-        'PASSWORD':'1234',
-        'HOST':'localhost',
-        'PORT': '5432'
+        'NAME': os.getenv('DB_MESSAGING'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT')
     }
 }
 
