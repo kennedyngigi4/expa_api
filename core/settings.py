@@ -83,7 +83,7 @@ REST_FRAMEWORK = {
     )
 }
 
-ASGI_APPLICATION = 'core.asgi.application'
+# ASGI_APPLICATION = 'core.asgi.application'
 
 
 ROOT_URLCONF = 'core.urls'
