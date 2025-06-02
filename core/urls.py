@@ -12,7 +12,9 @@ urlpatterns = [
     path("api/account/admin/", include("apps.accounts.superadmin.urls")),
     path("api/account/courier/", include("apps.accounts.courier.urls")),
     path('api/logistics/admin/', include("apps.logistics.superadmin.urls")),
+
     path('api/logistics/manager/', include("apps.logistics.manager.urls")),
+    
     path("api/logistics/client/", include("apps.logistics.urls")),
     path("api/messaging/client/", include("apps.messaging.urls")),
     path("api/logistics/courier/", include("apps.logistics.courier.urls")),

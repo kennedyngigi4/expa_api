@@ -5,7 +5,7 @@
 admin/
 customer/
 env/
-manager/
+/manager/
 static/
 media/
 
