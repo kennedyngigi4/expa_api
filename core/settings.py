@@ -18,6 +18,7 @@ SECRET_KEY=os.getenv("SECRET_KEY")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS=[
+    'api.expa.co.ke', '82.29.173.21'
     "127.0.0.1",
     "10.0.2.2",
 ]
