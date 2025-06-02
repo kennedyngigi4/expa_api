@@ -1,6 +1,7 @@
 
 # All folders
 
+.env
 admin/
 customer/
 env/
