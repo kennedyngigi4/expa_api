@@ -26,6 +26,9 @@ ALLOWED_HOSTS=[
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://10.0.2.2:8000",
+    "https://customer.expa.co.ke",
+    "https://manager.expa.co.ke",
+    "https://superadmin.expa.co.ke"
 ]
 
 # Application definition
