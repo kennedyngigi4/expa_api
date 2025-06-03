@@ -22,12 +22,48 @@ class ManagerStatisticsView(APIView):
     permission_classes = [ IsAuthenticated ]
 
     def get(self, request):
-        user = request.user.uid
-        orders_count = Order.objects.filter(created_by=user).count()
-        invoices_count = Invoice.objects.filter(created_by=user).count()
-        shipments_count = Shipment.objects.filter(created_by=user).count()
-        return Response({ "orders_count": orders_count, "invoices_count": invoices_count, "shipments_count": shipments_count }) 
+        user = request.user
 
+        try:
+            profile = user.profiles 
+            warehouse_id  = profile.warehouse
+            warehouse = Warehouse.objects.using("logistics").get(wid=warehouse_id)
+            warehouse_region = warehouse.county.lower().strip()
+        except Warehouse.DoesNotExist:
+            return Response({"detail": "No warehouse profile or region found."}, status=400)
+        except Exception as e:
+            return Response({ "detail": str(e)}, status=400)
+
+
+        unassigned_orders_count = Order.objects.filter(pickup_location__icontains=warehouse_region).count()
+        orders_count = Order.objects.filter(created_by=user.uid).count()
+        invoices_count = Invoice.objects.filter(created_by=user.uid).count()
+        shipments_count = Shipment.objects.filter(created_by=user.uid).count()
+        return Response({ "unassigned_orders_count": unassigned_orders_count, "orders_count": orders_count, "invoices_count": invoices_count, "shipments_count": shipments_count }) 
+
+
+class LatestManagerRegionOrdersView(APIView):
+    permission_classes = [ IsAuthenticated ]
+
+    def get(self, request):
+        user = request.user
+
+        try:
+            profile = user.profiles 
+            warehouse_id  = profile.warehouse
+            warehouse = Warehouse.objects.using("logistics").get(wid=warehouse_id)
+            warehouse_region = warehouse.county.lower().strip()
+        except Warehouse.DoesNotExist:
+            return Response({"detail": "No warehouse profile or region found."}, status=400)
+        except Exception as e:
+            return Response({ "detail": str(e)}, status=400)
+        
+        orders = Order.objects.filter(pickup_location__icontains=warehouse_region).order_by("-created_at")
+        serializer = ManagerOrderSerializer(orders, many=True)
+
+
+        filtered_data = [ order for order in serializer.data if order.get("status") == "Unassigned" ]
+        return Response(filtered_data)
 
 
 class ManagerCreateOrder(APIView):
@@ -65,9 +101,26 @@ class ManagerCreateOrder(APIView):
 
 
 class ClassifiedOrdersListView(APIView):
+    permission_classes = [ IsAuthenticated ]
+
+
+
     def get(self, request):
+        user = request.user
+
+        try:
+            profile = user.profiles 
+            warehouse_id  = profile.warehouse
+            warehouse = Warehouse.objects.using("logistics").get(wid=warehouse_id)
+            warehouse_region = warehouse.county.lower().strip()
+        except Warehouse.DoesNotExist:
+            return Response({"detail": "No warehouse profile or region found."}, status=400)
+        except Exception as e:
+            return Response({ "detail": str(e)}, status=400)
+
+
         status_filter = request.query_params.get("status", None)
-        orders = Order.objects.all()
+        orders = Order.objects.filter(pickup_location__icontains=warehouse_region).order_by("-created_at")
         serializer = ManagerOrderSerializer(orders, many=True)
         data = serializer.data
 

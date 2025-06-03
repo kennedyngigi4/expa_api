@@ -7,17 +7,25 @@ from rest_framework.response import Response
 class ProfileSerializer(serializers.ModelSerializer):
 
     warehousename = serializers.SerializerMethodField()
+    region = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
         fields = [
-            "account_type", "category", "warehouse", "warehousename"
+            "account_type", "category", "warehouse", "warehousename", "region"
         ]
 
     def get_warehousename(self, obj):
         try:
             warehouse = Warehouse.objects.using("logistics").get(wid=obj.warehouse)
             return warehouse.name
+        except Warehouse.DoesNotExist:
+            return None
+        
+    def get_region(self, obj):
+        try:
+            warehouse = Warehouse.objects.using("logistics").get(wid=obj.warehouse)
+            return warehouse.county
         except Warehouse.DoesNotExist:
             return None
 

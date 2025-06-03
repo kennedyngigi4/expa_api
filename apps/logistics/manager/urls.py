@@ -9,6 +9,7 @@ urlpatterns = router.urls
 
 urlpatterns += [
     path( "statistics/", ManagerStatisticsView.as_view(), name="statistics", ),
+    path( "latest_region_orders/", LatestManagerRegionOrdersView.as_view(), name="latest_region_orders", ),
     path( "create_order/", ManagerCreateOrder.as_view(), name="create_order", ),
     path("orders/", ClassifiedOrdersListView.as_view(), name="orders", ),
     path( "order_details/<str:pk>", OrderDetailsView.as_view(), name="order_details", ),
