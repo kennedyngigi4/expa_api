@@ -34,6 +34,8 @@ CORS_ALLOWED_ORIGINS = [
 # Optional: Allow mobile app via wildcard
 CORS_ALLOW_ALL_ORIGINS = False
 
+CORS_ALLOW_CREDENTIALS = True  # if using cookies/auth
+
 # Allow mobile native apps by using regex
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https:\/\/.*\.expa\.co\.ke$",  # all *.expa.co.ke subdomains
