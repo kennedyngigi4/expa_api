@@ -24,11 +24,20 @@ ALLOWED_HOSTS=[
     "10.0.2.2",
 ]
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://10.0.2.2:8000",
     "https://customer.expa.co.ke",
     "https://manager.expa.co.ke",
-    "https://superadmin.expa.co.ke"
+    "https://superadmin.expa.co.ke",
+    "http://localhost:3000",
+    "http://10.0.2.2:8000",
+]
+
+# Optional: Allow mobile app via wildcard
+CORS_ALLOW_ALL_ORIGINS = False
+
+# Allow mobile native apps by using regex
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https:\/\/.*\.expa\.co\.ke$",  # all *.expa.co.ke subdomains
+    r"^http:\/\/10\.0\.2\.2:.*$",      # Android emulators
 ]
 
 # Application definition
