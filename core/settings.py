@@ -32,7 +32,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 # Optional: Allow mobile app via wildcard
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True  # if using cookies/auth
 
