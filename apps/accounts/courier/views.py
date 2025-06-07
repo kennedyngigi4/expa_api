@@ -15,7 +15,9 @@ class CourierLocationStreamView(APIView):
 
     def post(self, request):
         serializer = DriverLocationSerializer(data=request.data)
+        print(request.data)
         if serializer.is_valid():
+            print("Valid ....")
             location, _ = DriverLocation.objects.update_or_create(
                 driver=request.user,
                 defaults = {
