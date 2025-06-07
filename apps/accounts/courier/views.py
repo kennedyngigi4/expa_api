@@ -14,7 +14,7 @@ class CourierLocationStreamView(APIView):
     permission_classes = [ IsAuthenticated ]
 
     def post(self, request):
-        serializer = DriverLocationSerializer(data=request.data)
+        serializer = DriverLocationSerializer(data=request.data, partial=True)
         print(request.data)
         if serializer.is_valid():
             print("Valid ....")
