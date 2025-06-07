@@ -17,7 +17,7 @@ class CourierLocationStreamView(APIView):
         serializer = DriverLocationSerializer(data=request.data)
         if serializer.is_valid():
             location, _ = DriverLocation.objects.update_or_create(
-                user=request.user,
+                driver=request.user,
                 defaults = {
                     "latitude": serializer.validated_data["latitude"],
                     "longitude": serializer.validated_data["longitude"],
@@ -25,7 +25,7 @@ class CourierLocationStreamView(APIView):
             )
 
             return Response({ "message": "Location updated"}, status=status.HTTP_200_OK)
-        return Response(serializer.error_messages, status=status.HTTP_400_BAD_REQUEST)        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)        
 
 
 

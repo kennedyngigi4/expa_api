@@ -34,6 +34,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 class DriverLocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = DriverLocation
+        exclude = ['driver']
         fields = "__all__"
 
 
