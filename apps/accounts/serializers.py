@@ -40,6 +40,9 @@ class DriverLocationSerializer(serializers.ModelSerializer):
 
 
 class DriverStreamSerializer(serializers.ModelSerializer):
+    latitude = serializers.FloatField()
+    longitude = serializers.FloatField()
+    
     class Meta:
         model = DriverLocation
         fields = [
