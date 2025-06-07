@@ -3,7 +3,7 @@ from apps.accounts.courier.views import *
 
 
 urlpatterns = [
-    path("location_stream/", CourierLocationStreamView.as_view(), name="location_stream/", ),
+    path("location_stream/", CourierLocationStreamView.as_view(), name="location_stream", ),
 ]
 
 
