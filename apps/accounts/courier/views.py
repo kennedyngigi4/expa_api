@@ -27,6 +27,7 @@ class CourierLocationStreamView(APIView):
             )
 
             return Response({ "message": "Location updated"}, status=status.HTTP_200_OK)
+        print("Serializer Errors: ", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)        
 
 

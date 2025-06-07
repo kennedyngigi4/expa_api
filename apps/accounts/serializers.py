@@ -34,7 +34,9 @@ class ProfileSerializer(serializers.ModelSerializer):
 class DriverLocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = DriverLocation
-        fields = "__all__"
+        fields = [
+            "latitude", "longitude", "vehicle_type", "vehicle_registration"
+        ]
 
 
 class UserSerializer(serializers.ModelSerializer):
