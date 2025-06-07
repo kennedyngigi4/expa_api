@@ -42,6 +42,17 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http:\/\/10\.0\.2\.2:.*$",      # Android emulators
 ]
 
+
+# Ensure PATCH method is allowed
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH", 
+    "POST",
+    "PUT",
+]
+
 # Application definition
 
 INSTALLED_APPS = [
