@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from apps.accounts.models import DriverLocation
-from apps.accounts.serializers import DriverLocationSerializer
+from apps.accounts.serializers import DriverLocationSerializer, DriverStreamSerializer
 
 
 
@@ -14,7 +14,7 @@ class CourierLocationStreamView(APIView):
     permission_classes = [ IsAuthenticated ]
 
     def post(self, request):
-        serializer = DriverLocationSerializer(data=request.data, partial=True)
+        serializer = DriverStreamSerializer(data=request.data, partial=True)
         print(request.data)
         if serializer.is_valid():
             print("Valid ....")

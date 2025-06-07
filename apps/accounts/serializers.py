@@ -39,6 +39,14 @@ class DriverLocationSerializer(serializers.ModelSerializer):
         ]
 
 
+class DriverStreamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DriverLocation
+        fields = [
+            "latitude", "longitude"
+        ]
+
+
 class UserSerializer(serializers.ModelSerializer):
     driverlocation = DriverLocationSerializer(required=False)
     profiles = ProfileSerializer(required=False)
