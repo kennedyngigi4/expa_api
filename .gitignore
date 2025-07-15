@@ -1,0 +1,10 @@
+
+# Files and Folders to ignore
+env/
+media/
+website/
+
+# files
+.env
+
+
