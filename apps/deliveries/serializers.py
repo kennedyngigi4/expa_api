@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.deliveries.models import PackageType, Package, Shipment, SizeCategory, ShipmentPackage, ShipmentTracking, HandOver, UrgencyLevel, ShipmentStage
+from apps.deliveries.models import PackageType, Package, Shipment, SizeCategory, InterCountyRoute, ShipmentPackage, ShipmentTracking, HandOver, UrgencyLevel, ShipmentStage
 from apps.messaging.models import Notification
 
 
@@ -30,8 +30,29 @@ class UrgencyLevelSerializer(serializers.ModelSerializer):
 
 
 
-class PackageWriteSerializer(serializers.ModelSerializer):
+class InterCountyRouteSerializer(serializers.ModelSerializer):
 
+    origins = serializers.SerializerMethodField()
+    destinations = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InterCountyRoute
+        fields = [
+            "origins", "destinations", "size_category", "base_weight_limit", "base_price",
+        ]
+
+    def get_origins(self, obj):
+        origins = ", ".join([office.name for office in obj.origins.all()])
+        return origins
+    
+    def get_destinations(self, obj):
+        destinations = ", ".join([office.name for office in obj.destinations.all()])
+        return destinations
+
+    
+
+
+class PackageWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Package
         fields = [
