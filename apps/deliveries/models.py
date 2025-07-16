@@ -102,7 +102,9 @@ class InterCountyRoute(models.Model):
     base_price = models.DecimalField(max_digits=12, decimal_places=2)
 
     def __str__(self):
-        return f"Route [{self.size_category.name}]"
+        origins = ", ".join([office.name for office in self.origins.all()])
+        destinations = ", ".join([office.name for office in self.destinations.all()])
+        return f"{origins} ➝ {destinations} [{self.size_category.name}]"
     
 
 class InterCountyWeightTier(models.Model):

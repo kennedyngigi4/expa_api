@@ -18,7 +18,7 @@ class AllPackagesView(generics.ListAPIView):
 
 
 class AllShipmentsView(generics.ListAPIView):
-    serializer_class = ShipmentSerializer
+    serializer_class = ShipmentReadSerializer
     queryset = Shipment.objects.all()
     permission_classes = [ IsAuthenticated, IsAdmin]
 
