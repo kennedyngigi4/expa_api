@@ -9,7 +9,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invoice
         fields = [
-            "invoice_id", "package", "package_name", "amount", "status", "issued_at"
+            'id', "invoice_id", "package", "package_name", "amount", "status", "issued_at"
         ]
 
     def get_package_name(self, obj):

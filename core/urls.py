@@ -16,6 +16,7 @@ urlpatterns = [
     path( 'api/deliveries/superadmin/', include("apps.deliveries.superadmin.urls")),
     path( 'api/deliveries/manager/', include("apps.deliveries.manager.urls")),
     path( 'api/deliveries/partnershop/', include("apps.deliveries.partnershop.urls")),
+    path( 'api/deliveries/drivers/', include("apps.deliveries.drivers.urls")),
 
 
     path( "api/messaging/", include("apps.messaging.urls")),

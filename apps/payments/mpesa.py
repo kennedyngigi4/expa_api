@@ -8,17 +8,19 @@ from datetime import datetime
 class MPESA:
 
     def __init__(self, phone, amount):
-        self.consumer_key = "CoekQiy5PmUdgRJtRKyCoV9WB3pMWj6cabG1lWP2H6XllhHB"
-        self.consumer_secret = "sksJnGakoPJdNFFuoLsXbs7AyLCVFpyAQ9SrspTdG6EzeIVvANFTjwtYCjuoNdlk"
+        self.consumer_key = "3rsVbkLos9UaFQ3ervHvSOaNiXrbPG1CcmSoDp4G4VE41SsM"
+        self.consumer_secret = "gygGBnZwbAPbU0lulH8UxGoDI0hS1GcMaGep6J60QAWLySplcGkmzf9hRDDWiFYi"
         self.authorization_url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
         self.phone = phone
-        self.amount = round(float(amount))
+        self.amount = amount
 
 
 
     def generateCredentials(self):
+        
         auth = requests.get(self.authorization_url, auth=HTTPBasicAuth(self.consumer_key, self.consumer_secret))
         response = json.loads(auth.text)
+        
         access_token = response["access_token"]
         return access_token
 
@@ -44,16 +46,17 @@ class MPESA:
         access_token = self.generateCredentials()
         api_url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
         headers = {"Authorization": "Bearer %s" % access_token}
+        lipa_context = self.LipaNow()
         request = {
-            "BusinessShortCode": self.LipaNow()['business_short_code'],
-            "Password": self.LipaNow()['decode_password'],
-            "Timestamp": self.LipaNow()['lipa_time'],
-            "TransactionType": "CustomerBuyGoodsOnline",
+            "BusinessShortCode": lipa_context['business_short_code'],
+            "Password": lipa_context['decode_password'],
+            "Timestamp": lipa_context['lipa_time'],
+            "TransactionType": "CustomerPayBillOnline",
             "Amount": self.amount,
             "PartyA": self.phone,  # replace with your phone number to get stk push
-            "PartyB": self.LipaNow()['business_short_code'],
+            "PartyB": lipa_context['business_short_code'],
             "PhoneNumber": self.phone,  # replace with your phone number to get stk push
-            "CallBackURL": "https://expa.co.ke/stk_callback",
+            "CallBackURL": "https://expa.co.ke",
             "AccountReference": "EXPA Logistics",
             "TransactionDesc": "EXPA Logistics"
         }

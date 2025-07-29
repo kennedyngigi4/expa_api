@@ -2,7 +2,7 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
-
+from decimal import Decimal
 # Create your models here.
 
 
@@ -15,6 +15,16 @@ class Office(models.Model):
     email = models.EmailField(verbose_name=_("email"))
     address = models.CharField(max_length=255, verbose_name=_("physical address"))
     description = models.TextField(verbose_name=_("description"))
+
+    enable_pickup = models.BooleanField(default=True)
+    pickup_discount_percent = models.DecimalField(
+        max_digits=5, decimal_places=2, default="0.00",
+        help_text="Discount (%) on intracity pickup fee for intercounty deliveries."
+    )
+    max_pickup_km = models.DecimalField(
+        max_digits=5, decimal_places=2, default="5.00",
+        help_text="Distance covered under base pickup fee."
+    )
 
     def __str__(self):
         return self.name

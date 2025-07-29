@@ -10,36 +10,23 @@ from apps.accounts.models import *
 from apps.accounts.permissions import *
 from apps.deliveries.models import *
 from apps.deliveries.serializers import *
+from apps.deliveries.drivers.serializers import *
 
 
-
-class DriversAllShipments(APIView):
+class DriverAssignedShipmentsView(generics.ListAPIView):
+    serializer_class = RiderShipmentSerializer
     permission_classes = [ IsAuthenticated, IsRider ]
 
-    def post(self, request):
+    def get_queryset(self):
         user = self.request.user
-
-        # immediate shipments
-        immediate_shipments = Shipment.objects.filter(
-            courier=user,
-            status__in=["created", "in_transit"]
-        ).distinct().order_by("-assigned_at")
-
-        # upcoming shipments
-        stage_qs = ShipmentStage.objects.filter(
-            driver=user,
-            status__in=["pending", "awaiting"],
-        ).select_related('shipment')
-        upcoming_shipments = [stage.shipment for stage in stage_qs]
-
-        immediate_data = ShipmentReadSerializer(immediate_shipments, many=True).data
-        upcoming_data = ShipmentReadSerializer(upcoming_shipments, many=True).data
-
-
-        return Response({
-            "immediate": immediate_data,
-            "upcoming": upcoming_data
-        })
+        data = Shipment.objects.filter(
+            stages__driver=user
+        ).distinct().prefetch_related(
+            'shipmentpackage_set__package',
+            'stages',
+        ).select_related('origin_office', 'destination_office')
+        print(data)
+        return data
 
 
 

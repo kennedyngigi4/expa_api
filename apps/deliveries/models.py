@@ -12,7 +12,7 @@ from django.db import transaction
 from django.db.models import Max, Min
 from django.utils.text import slugify
 import qrcode.constants
-from apps.accounts.models import Office, User, DriverLocation
+from apps.accounts.models import Office, User, DriverLocation, PartnerProfile
 from geopy.distance import geodesic
 # Create your models here.
 
@@ -86,7 +86,7 @@ class IntraCityPackagePricing(models.Model):
     min_weight = models.DecimalField(max_digits=10, decimal_places=2)  # in kg
     max_weight = models.DecimalField(max_digits=10, decimal_places=2)  # in kg
     base_price = models.DecimalField(max_digits=12, decimal_places=2)  # for first 5km
-    extra_km_price = models.DecimalField(max_digits=12, decimal_places=2)  # per km after 5km
+    extra_km_price = models.DecimalField(max_digits=12, decimal_places=3)  # per km after 5km
 
     def __str__(self):
         return f"{self.min_weight}-{self.max_weight}kg"
@@ -119,7 +119,7 @@ class InterCountyWeightTier(models.Model):
 
 
 class LastMileDeliveryPolicy(models.Model):
-    office = models.OneToOneField(Office, on_delete=models.CASCADE)
+    office = models.OneToOneField(Office, on_delete=models.CASCADE, related_name="last_mile_policy")
     free_within_km = models.DecimalField(max_digits=5, decimal_places=2, default=2.5)
     per_km_fee = models.DecimalField(max_digits=10, decimal_places=2, default=30.00)
 
@@ -279,6 +279,7 @@ class Shipment(models.Model):
         ( 'delivery', 'Delivery to Recipient', ),
         ( 'pickup', 'Pickup to Office', ),
         ( 'transfer', 'Office to Office Transfer', ),
+        ( 'complete', 'Pickup and Deliver to Recipient'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -403,6 +404,26 @@ class ShipmentPackage(models.Model):
     confirmed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='confirmed_packages')
     confirmed_at = models.DateTimeField(null=True, blank=True)
     receiver_signature = models.ImageField(upload_to='signatures/', null=True, blank=True)
+
+
+    pickup_stage = models.ForeignKey(
+        ShipmentStage, null=True, blank=True, on_delete=models.SET_NULL, related_name="pickup_packages"
+    )
+    delivery_stage = models.ForeignKey(
+        ShipmentStage, null=True, blank=True, on_delete=models.SET_NULL, related_name="delivery_packages"
+    )
+
+    # Optional: If this package has a pickup from address or partner shop
+    pickup_address = models.TextField(null=True, blank=True)
+    pickup_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="pickup_packages")
+    pickup_shop = models.ForeignKey(PartnerProfile, null=True, blank=True, on_delete=models.SET_NULL)
+
+    # Optional: If this package is being delivered directly to someone
+    delivery_address = models.TextField(null=True, blank=True)
+    delivery_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="delivery_packages")
+
+
+
 
     class Meta:
         unique_together = ('shipment', 'package')

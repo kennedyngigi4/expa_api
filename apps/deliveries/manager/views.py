@@ -13,6 +13,39 @@ from apps.deliveries.models import *
 from apps.deliveries.serializers import *
 
 
+
+class ManagerDashboardStatsView(APIView):
+    permission_classes = [ IsManager, IsAuthenticated]
+
+    def get(self, request):
+        user = self.request.user
+
+        if not hasattr(user, 'office'):
+            return Response({ "success": False, "message": "Manager is not linked to any office."}, status=400)
+
+        office = user.office
+
+        packages = Package.objects.filter(origin_office=office)
+        shipments = Shipment.objects.all()
+
+        orders = packages.count()
+        unassigned_orders = packages.filter(shipments=None).count()
+        shipments_out = shipments.filter(origin_office=office).count()
+        shipments_in = shipments.filter(destination_office=office).count()
+        outgoing_shipments = Shipment.objects.filter(manager=user, origin_office=office).order_by("-assigned_at")
+        recent_shipments = ShipmentReadSerializer(outgoing_shipments, many=True).data
+
+        return Response({
+            "orders": orders,
+            "unassigned_orders": unassigned_orders,
+            "shipments_out": shipments_out,
+            "shipments_in": shipments_in,
+            "recent_shipments": recent_shipments,
+        })
+
+
+
+
 class ManagerOriginPackagesView(ListAPIView):
     serializer_class = PackageSerializer
     permission_classes = [ IsManager ]
@@ -40,9 +73,14 @@ class ManagerOriginPackagesView(ListAPIView):
         return queryset.distinct()
 
 
+class ManagerPackageDetailsView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = PackageSerializer
+    queryset = Package.objects.all()
+    permission_classes = [IsAuthenticated, IsManager]
 
 
-class ManagerCreateListShipmentView(generics.ListCreateAPIView):
+
+class ManagerCreateShipmentView(generics.ListCreateAPIView):
     serializer_class = ShipmentSerializer
     permission_classes = [IsAuthenticated, IsManager]
     queryset = Shipment.objects.all()
@@ -68,6 +106,12 @@ class ManagerCreateListShipmentView(generics.ListCreateAPIView):
 
 
 
+
+class ManagerListShipmentView(generics.ListCreateAPIView):
+    serializer_class = ShipmentReadSerializer
+    permission_classes = [IsAuthenticated, IsManager]
+    queryset = Shipment.objects.all()
+
     def get_queryset(self):
         user = self.request.user
         category = self.request.query_params.get("category")
@@ -92,6 +136,7 @@ class ManagerCreateListShipmentView(generics.ListCreateAPIView):
             queryset = queryset
 
         return queryset
+
 
 
 
@@ -125,5 +170,17 @@ class ManagerIncomingShipmentsView(generics.ListAPIView):
 
         
         return queryset
+
+
+
+
+class ManagerShipmentDetailsView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated, IsManager]
+    serializer_class = ShipmentReadSerializer
+    queryset = Shipment.objects.all()
+    
+
+
+
 
 

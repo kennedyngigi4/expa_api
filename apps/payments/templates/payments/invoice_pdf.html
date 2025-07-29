@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice PDF</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+        }
+
+        .invoice-box {
+            border: 1px solid #eee;
+            padding: 20px;
+        }
+
+        .heading {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="invoice-box">
+        <div class="heading">Invoice ID: {{ invoice.invoice_id }}</div>
+        <p><strong>Package:</strong> {{ invoice.package.package_id }}</p>
+        <p><strong>Amount:</strong> KES {{ invoice.amount }}</p>
+        <p><strong>Status:</strong> {{ invoice.status }}</p>
+        <p><strong>Issued At:</strong> {{ invoice.issued_at }}</p>
+    </div>
+</body>
+
+</html>

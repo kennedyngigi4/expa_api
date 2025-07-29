@@ -34,12 +34,16 @@ class InterCountyRouteSerializer(serializers.ModelSerializer):
 
     origins = serializers.SerializerMethodField()
     destinations = serializers.SerializerMethodField()
+    size_category = serializers.SerializerMethodField()
 
     class Meta:
         model = InterCountyRoute
         fields = [
             "origins", "destinations", "size_category", "base_weight_limit", "base_price",
         ]
+
+    def get_size_category(self, obj):
+        return obj.size_category.name
 
     def get_origins(self, obj):
         origins = ", ".join([office.name for office in obj.origins.all()])
@@ -66,8 +70,8 @@ class PackageWriteSerializer(serializers.ModelSerializer):
         ]
 
 
-class PackageSerializer(serializers.ModelSerializer):
 
+class PackageSerializer(serializers.ModelSerializer):
     size_category_name = serializers.SerializerMethodField()
     urgency_name = serializers.SerializerMethodField()
     package_type_name = serializers.SerializerMethodField()
@@ -78,7 +82,7 @@ class PackageSerializer(serializers.ModelSerializer):
             "id","slug","name", "package_type", "package_type_name", "size_category", "size_category_name", "delivery_type", "is_fragile", "urgency", "urgency_name",
             "length", "width", "height", "weight", "pickup_date", "description", "sender_name", "sender_phone", "sender_address", 
             "sender_latLng", "is_paid", "recipient_name", "recipient_phone", "recipient_address", "recipient_latLng", 
-            "package_id", "status"
+            "package_id", "status", "created_by_role", "created_at"
         ]
         read_only_fields = [
             "id", "package_id", "current_handler", "delivery_stage_count", "current_stage"
@@ -100,6 +104,15 @@ class PackageSerializer(serializers.ModelSerializer):
         return getattr(obj.package_type, "name", None)
 
 
+
+
+class ShipmentPackageSerializer(serializers.ModelSerializer):
+    package = PackageSerializer()
+    class Meta:
+        model = ShipmentPackage
+        fields = [
+            "shipment", "package", "status", "delivered", "notes", "confirmed_by", "confirmed_at", "receiver_signature"
+        ]
 
 
 
@@ -163,33 +176,67 @@ class ShipmentSerializer(serializers.ModelSerializer):
         )
 
 
+
 class ShipmentStageSerializers(serializers.ModelSerializer):
+
+    driver = serializers.SerializerMethodField()
+
     class Meta:
         model = ShipmentStage
-        fields = "__all__"
+        fields = [
+            "shipment", "stage_number", "driver", "from_office", "to_office", "status", "created_at"
+        ]
+
+    def get_driver(self, obj):
+        return obj.driver.full_name
+
 
 
 class ShipmentReadSerializer(serializers.ModelSerializer):
-    packages = PackageSerializer(many=True)
+    packages = serializers.SerializerMethodField()
     stages = ShipmentStageSerializers(many=True)
     destinationoffice = serializers.SerializerMethodField()
     originoffice = serializers.SerializerMethodField()
     current_stage = serializers.SerializerMethodField()
+    summary = serializers.SerializerMethodField()
     
 
     class Meta:
         model = Shipment
         fields = [
-            "shipment_id","shipment_type", "packages", "origin_office", "originoffice", "destination_office", 
-            "destinationoffice", "status", "courier", "stages", "current_stage",
+            "id", "shipment_id","shipment_type", "packages", "origin_office", "originoffice", "destination_office", 
+            "destinationoffice", "status", "courier", "stages", "current_stage", "summary", "qrcode_svg", "assigned_at"
         ]
+
+
+    def get_summary(self, obj):
+        packages = obj.shipmentpackage_set.all()
+        if obj.shipment_type == "pickup":
+            sources = set(p.package.pickup_address for p in packages)
+            return f"Pickup from {len(sources)} client(s) to {obj.destination_office.name}"
+        elif obj.shipment_type == "delivery":
+            destinations = set(p.package.recipient_address for p in packages)
+            return f"Deliver from {obj.origin_office.name} to {len(destinations)} client(s)"
+        elif obj.shipment_type == "transfer":
+            return f"Transfer from {obj.origin_office.name} to {obj.destination_office.name}"
+        elif obj.shipment_type == "complete":
+            return f"{len(packages)} direct delivery(s)"
+        return "Shipment"
+
+
+    def get_packages(self, obj):
+        shipment_packages = ShipmentPackage.objects.filter(shipment=obj)
+        return ShipmentPackageSerializer(shipment_packages, many=True).data
 
 
     def get_originoffice(self, obj):
         return obj.origin_office.name
     
     def get_destinationoffice(self, obj):
-        return obj.destination_office.name
+        if obj.destination_office:
+            return obj.destination_office.name
+        return None 
+    
     
     def get_current_stage(self, obj):
         return obj.current_stage

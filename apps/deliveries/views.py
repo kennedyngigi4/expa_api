@@ -1,21 +1,28 @@
 import math
+import googlemaps
 from django.shortcuts import render
 from django.db.models import Q
+from django.conf import settings
+from django.db.models import Sum
 
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+
 from geopy.distance import geodesic
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from apps.accounts.models import *
 from apps.accounts.permissions import *
 from apps.deliveries.models import *
 from apps.deliveries.serializers import *
+from apps.payments.models import *
 from apps.payments.mpesa import MPESA
 
+
+gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
 # Create your views here.
 
 
@@ -33,6 +40,37 @@ class PackageTypeView(generics.ListAPIView):
 class UrgencyView(generics.ListAPIView):
     serializer_class = UrgencyLevelSerializer
     queryset = UrgencyLevel.objects.all().order_by("name")
+
+
+
+class BusinessAccountStatsView(APIView):
+    permission_classes = [ IsAuthenticated ]
+
+    def get(self, request):
+        user = self.request.user
+
+        if user.account_type != "business":
+            return Response({ "success": False, "message": "Not a business account."}, status=403)
+        
+
+        # Total orders by this business
+        all_orders = Package.objects.filter(created_by=user).count()
+
+        # unpaid_invoices
+        unpaid_qs = Invoice.objects.filter(Q(status__iexact="unpaid") | Q(status__iexact="pending"), package__created_by=user)
+        unpaid_invoices = unpaid_qs.count()
+
+        # total unpaid amounts
+        total_amount_unpaid = unpaid_qs.aggregate(total=Sum("amount"))["total"] or 0
+
+
+        return Response({
+            "all_orders": all_orders,
+            "unpaid_invoices": unpaid_invoices,
+            "total_amount_unpaid": total_amount_unpaid
+        })
+
+
 
 
 
@@ -65,9 +103,11 @@ class CustomerPackagesView(generics.ListCreateAPIView):
                     created_by_role=self.request.user.role,
                     sender_user=user,
                 )
+
+                payable_amount = int(round(float(request.data["fees"])))
+                mpesa = MPESA(request.data["sender_phone"], payable_amount).MpesaSTKPush()
                 
-                MPESA(request.data["sender_phone"], request.data["fees"]).MpesaSTKPush()
-                
+
                 return Response({
                     "success": True,
                     "message": "Package created successfully.",
@@ -148,6 +188,25 @@ class CustomerPackageRetrieveEditDeleteView(generics.RetrieveUpdateDestroyAPIVie
 
 
 
+def get_road_distance_km(origin, destination):
+    result = gmaps.distance_matrix(origins=[origin], destinations=[destination], mode="driving")
+    try:
+        distance_meters = result['rows'][0]['elements'][0]['distance']['value']  # meters
+        return round(Decimal(distance_meters) / 1000, 2)  # km
+    except Exception:
+        return None
+
+
+
+def calculate_volumetric_weight(length_cm, width_cm, height_cm, divisor=6000):
+    return (length_cm * width_cm * height_cm ) / divisor
+
+
+def calculate_chargeable_weight(actual_weight_kg, length_cm, width_cm, height_cm):
+    volumetric_weight = calculate_volumetric_weight(length_cm, width_cm, height_cm)
+    return max(actual_weight_kg, volumetric_weight)
+
+
 class IntraCityPriceCalculationView(APIView):
     def post(self, request):
         data = request.data
@@ -156,29 +215,31 @@ class IntraCityPriceCalculationView(APIView):
             size_category = data.get("size_category")
             size_category = SizeCategory.objects.get(id=size_category)
             weight = Decimal(data.get("weight", 0))
+            length = Decimal(data.get("length", 0))
+            width = Decimal(data.get("width", 0))
+            height = Decimal(data.get("height", 0))
             sender_latLng = data.get("sender_latLng")
             recipient_latLng = data.get("recipient_latLng")
 
             sender_coords = tuple(round(float(coord), 5) for coord in sender_latLng.split(","))
             recipient_coords = tuple(round(float(coord), 5) for coord in recipient_latLng.split(","))
 
-            distance_km = geodesic(sender_coords, recipient_coords).km
-            distance_km = Decimal(distance_km)
-            
+            distance_km = get_road_distance_km(sender_coords, recipient_coords)
+
+            if distance_km is None:
+                return Response({ "success": False, "message": "Failed to calculate road distance." }, status=500)
+
 
             if size_category.name.lower() == "parcel":
-                
                 policy = IntraCityParcelPolicy.objects.first()
                 
                 if weight > policy.max_weight:
-                    print(distance_km)
                     return Response({ "success": False, "message": "Parcel exceeds max weight." }, status=400)
                 
                 if distance_km > policy.max_distance_km:
                     return Response({ "success": False, "message": "Distance exceeds max range for parcel delivery." }, status=400)
 
                 if distance_km <= policy.base_km:
-                    
                     price = policy.base_price
 
                 else:
@@ -189,9 +250,14 @@ class IntraCityPriceCalculationView(APIView):
                 
 
             elif size_category.name.lower() == "package":
+                chargeable_weight = calculate_chargeable_weight(weight, length, width, height)
+                chargeable_weight = Decimal(chargeable_weight).quantize(Decimal("1.00"), rounding=ROUND_HALF_UP)
+
+                print(chargeable_weight)
+
                 pricing = IntraCityPackagePricing.objects.filter(
-                    min_weight__lte=weight,
-                    max_weight__gte=weight
+                    min_weight__lte=chargeable_weight,
+                    max_weight__gte=chargeable_weight
                 ).first()
 
                 if not pricing:
@@ -230,7 +296,8 @@ class InterCountyPriceCalculator(APIView):
             length = Decimal(data.get("length", 0))
             width = Decimal(data.get("width", 0))
             height = Decimal(data.get("height", 0))
-            requires_last_mile = data.get("requires_last_mile", False)
+            requires_last_mile = bool(data.get("requires_last_mile", False))
+            requires_pickup = bool(data.get("requires_pickup", False))
 
             sender_latLng = data.get("sender_latLng")
             recipient_latLng = data.get("recipient_latLng")
@@ -250,10 +317,7 @@ class InterCountyPriceCalculator(APIView):
                 return Response({ "success": False, "message": "Could not resolve nearest offices." }, status=404)
             
             # Calculate chargeable weight
-            volumetric_weight = (length * width * height) / Decimal(6000)
-            chargeable_weight = max(weight, volumetric_weight)
-
-            
+            chargeable_weight = calculate_chargeable_weight(weight, length, width, height)
 
             # Match route
             route = InterCountyRoute.objects.filter(
@@ -294,24 +358,56 @@ class InterCountyPriceCalculator(APIView):
                     }, status=404)
 
                 total_price = base_price + (excess_weight * tier.price_per_kg)
-
             
+
+            # Calculate pickup fee if required
+            pickup_fee = Decimal("0.00")
+            if requires_pickup and origin_office.enable_pickup:
+                pickup_distance_km = get_road_distance_km(sender_coords, (float(origin_office.geo_lat),float(origin_office.geo_lng)))
+                pickup_distance_km = Decimal(round(pickup_distance_km, 2))
+
+                chargeable_weight = calculate_chargeable_weight(chargeable_weight, length, width, height)
+                print(chargeable_weight)
+                pricing = IntraCityPackagePricing.objects.filter(
+                    min_weight__lte=chargeable_weight,
+                    max_weight__gte=chargeable_weight
+                ).first()
+
+                print(pricing)
+
+                if pricing:
+                    max_km = origin_office.max_pickup_km
+
+                    
+                    if pickup_distance_km <= max_km:
+                        pickup_fee = pricing.base_price
+                        
+                    else:
+                        extra_distance = pickup_distance_km - max_km
+                        pickup_fee = pricing.base_price + (extra_distance * pricing.extra_km_price)
+                    
+                    discount_rate = origin_office.pickup_discount_percent / Decimal("100.00")
+                    pickup_discount = pickup_fee * discount_rate
+                    pickup_fee -= pickup_discount
+
+
+
             # ✅ Calculate last mile fee if required
             last_mile_fee = Decimal("0.00")
             if requires_last_mile:
                 last_mile_fee = self.get_lastmile_price(destination_office, recipient_coords)
-
-            final_fee = total_price + last_mile_fee
+            
+            final_fee = pickup_fee + total_price + last_mile_fee
 
             return Response({
                 "success": True,
+                "pickup_fee": round(pickup_fee),
                 "estimated_fee": round(total_price),
                 "last_mile_fee": round(last_mile_fee),
                 "total_fee": round(final_fee),
                 "origin_office_id": origin_office.id,
                 "destination_office_id": destination_office.id,
                 "chargeable_weight": round(chargeable_weight, 2),
-                "volumetric_weight": round(volumetric_weight, 2),
                 "base_limit": base_limit
             })
 
@@ -322,20 +418,23 @@ class InterCountyPriceCalculator(APIView):
 
 
     def get_lastmile_price(self, office, recipient_coords):
-
         try:
+            
             policy = office.last_mile_policy 
         except LastMileDeliveryPolicy.DoesNotExist:
             return Decimal("0.00") 
-
-        office_coord = (float(office.geo_lat), float(office.geo_lng))
-        distance_km = geodesic(office_coord, recipient_coords).km
+        
+        office_coord = (float(office.geo_lat),float(office.geo_lng))
+        
+        distance_km = get_road_distance_km(office_coord, recipient_coords)
         distance_km = Decimal(round(distance_km, 2))
 
         if distance_km <= policy.free_within_km:
             return Decimal("0.00")
 
+        
         extra_km = distance_km - policy.free_within_km
+        
         return extra_km * policy.per_km_fee
 
 
