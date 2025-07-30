@@ -57,16 +57,18 @@ class ManagerOriginPackagesView(ListAPIView):
         if not user.office:
             return Package.objects.none()
         
-        queryset = Package.objects.filter(origin_office=user.office).order_by("-created_at")
+        queryset = Package.objects.all().order_by("-created_at")
 
         if category == "unassigned":
-            queryset = queryset.filter(shipments=None)
+            queryset = queryset.filter(shipments=None, origin_office=user.office)
         elif category == "assigned":
-            queryset = queryset.filter(shipments__isnull=False, status="assigned")
+            queryset = queryset.filter(shipments__isnull=False, status="assigned", origin_office=user.office)
+        elif category == "incoming":
+            queryset == queryset.filter(destination_office=user.office, shipments__isnull=False, status="assigned").exclude(origin_office=user.office)
         elif category == "in_transit":
-            queryset = queryset.filter(shipments__status="in_transit")
+            queryset = queryset.filter(shipments__status="in_transit", origin_office=user.office)
         elif category == "delivered":
-            queryset = queryset.filter(status="delivered")
+            queryset = queryset.filter(status="delivered", origin_office=user.office)
         elif category == "all":
             queryset = queryset
 
