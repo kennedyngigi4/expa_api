@@ -296,8 +296,8 @@ class InterCountyPriceCalculator(APIView):
             length = Decimal(data.get("length", 0))
             width = Decimal(data.get("width", 0))
             height = Decimal(data.get("height", 0))
-            requires_last_mile = bool(data.get("requires_last_mile", False))
-            requires_pickup = bool(data.get("requires_pickup", False))
+            requires_last_mile = bool(data.get("requires_last_mile"))
+            requires_pickup = bool(data.get("requires_pickup"))
 
             sender_latLng = data.get("sender_latLng")
             recipient_latLng = data.get("recipient_latLng")
