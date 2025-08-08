@@ -61,6 +61,9 @@ class ManagerOriginPackagesView(ListAPIView):
 
         if category == "unassigned":
             queryset = queryset.filter(shipments=None, origin_office=user.office)
+        if category == "received":
+            queryset = queryset.filter(status="RECEIVED", origin_office=user.office)
+
         elif category == "assigned":
             queryset = queryset.filter(shipments__isnull=False, status="assigned", origin_office=user.office)
         elif category == "incoming":
@@ -125,16 +128,18 @@ class ManagerListShipmentView(generics.ListCreateAPIView):
 
         if category == "assigned":
             queryset = queryset.filter(status="created")
-        elif category == "in_transit":
-            queryset = queryset.filter(status="in_transit")
-        elif category == "delivered":
-            queryset = queryset.filter(status="delivered")
-        elif category == "returned":
-            queryset = queryset.filter(status="returned")
-        elif category == "cancelled":
-            queryset = queryset.filter(status="cancelled")
+        elif category == "IN_TRANSIT":
+            queryset = queryset.filter(status="IN_TRANSIT")
+        elif category == "RECEIVED":
+            queryset = queryset.filter(confirm_received=True)
+        elif category == "DELIVERED":
+            queryset = queryset.filter(status="DELIVERED")
+        elif category == "RETURNED":
+            queryset = queryset.filter(status="RETURNED")
+        elif category == "CANCELLED":
+            queryset = queryset.filter(status="CANCELLED")
 
-        elif category == "all":
+        elif category == "ALL":
             queryset = queryset
 
         return queryset
@@ -183,6 +188,42 @@ class ManagerShipmentDetailsView(generics.RetrieveUpdateDestroyAPIView):
     
 
 
+class ManagerConfirmShipmentReceivedView(APIView):
+    permission_classes = [IsAuthenticated, IsManager]
+    
+    def post(self, request, pk):
+        try:
+            shipment = Shipment.objects.get(id=pk)
+
+            # Ensure its by the receiving manager
+            if hasattr(self.request.user, "office") and shipment.destination_office != request.user.office:
+                return Response(
+                    {"detail": "You are not authorized to confirm this shipment."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            #1. Update shipment
+            shipment.confirm_received = True
+            shipment.status = PackageStatus.RECEIVED
+            shipment.save()
+
+            # 2. Update ShipmentPackage
+            shipment_packages = ShipmentPackage.objects.filter(shipment=shipment)
+            shipment_packages.update(status=PackageStatus.RECEIVED)
 
 
+            # 3. Update all Packages linked via ShipmentPackages
+            Package.objects.filter(
+                id__in=shipment_packages.values_list("package", flat=True)
+            ).update(status=PackageStatus.RECEIVED)
 
+            return Response(
+                {"detail": "Shipment and related packages marked as received."},
+                status=status.HTTP_200_OK
+            )
+        
+        except Shipment.DoesNotExist:
+            return Response(
+                {"detail": "Shipment not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )

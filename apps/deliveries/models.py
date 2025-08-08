@@ -139,12 +139,14 @@ def UserPackageImgPath(instance, filename):
 
 
 class PackageStatus(models.TextChoices):
-    PENDING = "pending", "Pending"
-    ASSIGNED = "assigned", "Assigned"
-    IN_TRANSIT = "in_transit", "In Transit"
-    DELIVERED = "delivered", "Delivered"
-    RETURNED = "returned", "Returned"
-    CANCELLED = "cancelled", "Cancelled"
+    PENDING = "PENDING", "PENDING"
+    ASSIGNED = "ASSIGNED", "ASSIGNED"
+    IN_TRANSIT = "IN_TRANSIT", "IN_TRANSIT"
+    DELIVERED = "DELIVERED", "DELIVERED"
+    RECEIVED = "RECEIVED", "RECEIVED"
+    RETURNED = "RETURNED", "RETURNED"
+    CANCELLED = "CANCELLED", "CANCELLED"
+    HANDOVER = "HANDOVER", "HANDOVER"
 
 
 class Package(models.Model):
@@ -298,6 +300,7 @@ class Shipment(models.Model):
     requires_handover = models.BooleanField(default=False)
     assigned_at = models.DateTimeField(auto_now_add=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
+    confirm_received = models.BooleanField(default=False)
 
     origin_office = models.ForeignKey(Office, related_name="shipment_origin", on_delete=models.CASCADE, null=True, blank=True)
     destination_office = models.ForeignKey(Office, related_name="shipment_destination", on_delete=models.CASCADE, null=True, blank=True)

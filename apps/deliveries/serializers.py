@@ -212,13 +212,19 @@ class ShipmentReadSerializer(serializers.ModelSerializer):
     def get_summary(self, obj):
         packages = obj.shipmentpackage_set.all()
         if obj.shipment_type == "pickup":
-            sources = set(p.package.pickup_address for p in packages)
-            return f"Pickup from {len(sources)} client(s) to {obj.destination_office.name}"
+            sources = set(p.package.sender_address for p in packages)
+            if obj.origin_office:
+                return f"Pickup from {len(sources)} client(s) to {obj.origin_office.name}"
+            else:
+                return f"Pickup from {len(sources)} client(s)"
+            
         elif obj.shipment_type == "delivery":
             destinations = set(p.package.recipient_address for p in packages)
             return f"Deliver from {obj.origin_office.name} to {len(destinations)} client(s)"
+        
         elif obj.shipment_type == "transfer":
             return f"Transfer from {obj.origin_office.name} to {obj.destination_office.name}"
+        
         elif obj.shipment_type == "complete":
             return f"{len(packages)} direct delivery(s)"
         return "Shipment"

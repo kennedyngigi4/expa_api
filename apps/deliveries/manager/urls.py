@@ -11,6 +11,7 @@ urlpatterns = [
     path( "shipments/", ManagerListShipmentView.as_view(), name="shipments", ),
     path( "shipment_details/<str:pk>/", ManagerShipmentDetailsView.as_view(), name="shipment_details", ),
     path( "incoming_shipments/", ManagerIncomingShipmentsView.as_view(), name="incoming_shipments", ),
+    path( "shipments/<str:pk>/confirm-received/", ManagerConfirmShipmentReceivedView.as_view(), name="confirm-received",),
 ]
 
 
