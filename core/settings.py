@@ -66,6 +66,8 @@ INSTALLED_APPS = [
     'apps.deliveries.apps.DeliveriesConfig',
     'apps.messaging.apps.MessagingConfig',
     'apps.payments.apps.PaymentsConfig',
+    'apps.corporate.apps.CorporateConfig',
+    'apps.fullloads.apps.FullloadsConfig',
 ]
 
 
@@ -146,7 +148,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Nairobi'
 
 USE_I18N = True
 

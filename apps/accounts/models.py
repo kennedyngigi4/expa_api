@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
+from apps.corporate.models import CorporateOffice
 # Create your models here.
 
 
@@ -123,6 +124,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     role = models.CharField(max_length=100, choices=ROLE_CHOICES, verbose_name=_("role"))
     office = models.ForeignKey(Office, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("office allocated (manager)"))
+    corporate_office = models.ForeignKey(CorporateOffice, on_delete=models.SET_NULL, null=True, blank=True, related_name="corporate_office")
     profile_image = models.ImageField(upload_to="users/", null=True, blank=True, verbose_name=_("user image"))
     account_type = models.CharField(max_length=50, choices=ACCOUNT_TYPE_CHOICES, default="personal")
 

@@ -89,9 +89,6 @@ class CustomerPackagesView(generics.ListCreateAPIView):
     def post(self, request, *args, **kwargs):
         
         serializer = self.get_serializer(data=request.data)
-        
-        
-       
         try:
             
 
@@ -105,7 +102,7 @@ class CustomerPackagesView(generics.ListCreateAPIView):
                 )
 
                 payable_amount = int(round(float(request.data["fees"])))
-                mpesa = MPESA(request.data["sender_phone"], payable_amount).MpesaSTKPush()
+                # mpesa = MPESA(request.data["sender_phone"], payable_amount).MpesaSTKPush()
                 
 
                 return Response({
@@ -116,8 +113,6 @@ class CustomerPackagesView(generics.ListCreateAPIView):
             
                 
             return Response({ "success": False, "message": serializer.errors }, status=status.HTTP_400_BAD_REQUEST)
-
-
 
 
         except ValidationError as ve:
@@ -131,8 +126,6 @@ class CustomerPackagesView(generics.ListCreateAPIView):
                 "success": False,
                 "message": f"An error occurred: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
 
 
 class CustomerPackageRetrieveEditDeleteView(generics.RetrieveUpdateDestroyAPIView):
@@ -333,21 +326,15 @@ class InterCountyPriceCalculator(APIView):
                 }, status=404)
             
             
-            base_price = route.base_price
-            base_limit = route.base_weight_limit
+            # base_price = route.base_price
+            # base_limit = route.base_weight_limit
 
             
-            if chargeable_weight <= base_limit:
-                total_price = base_price
-
-            else:
-                
-                excess_weight = chargeable_weight - base_limit
-                
+            if chargeable_weight:
                 tier = InterCountyWeightTier.objects.filter(
                     route=route,
-                    min_weight__lte=excess_weight,
-                    max_weight__gte=excess_weight
+                    min_weight__lte=chargeable_weight,
+                    max_weight__gte=chargeable_weight
                 ).first()
                 
 
@@ -357,7 +344,7 @@ class InterCountyPriceCalculator(APIView):
                         "message": "No matching tier for excess weight."
                     }, status=404)
 
-                total_price = base_price + (excess_weight * tier.price_per_kg)
+                total_price = chargeable_weight * tier.price_per_kg
             
 
             # Calculate pickup fee if required
@@ -408,7 +395,7 @@ class InterCountyPriceCalculator(APIView):
                 "origin_office_id": origin_office.id,
                 "destination_office_id": destination_office.id,
                 "chargeable_weight": round(chargeable_weight, 2),
-                "base_limit": base_limit
+                # "base_limit": base_limit
             })
 
 

@@ -58,4 +58,10 @@ class CouriersView(generics.ListAPIView):
 class ProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
-    queryset = User.objects.all()
+    
+    def get_object(self):
+        return self.request.user
+
+
+
+

@@ -11,9 +11,14 @@ admin.site.register(InterCountyWeightTier)
 admin.site.register(LastMileDeliveryPolicy)
 admin.site.register(UrgencyLevel)
 admin.site.register(Package)
+admin.site.register(PackageAttachment)
+admin.site.register(PackageItem)
 admin.site.register(Shipment)
 admin.site.register(ShipmentStage)
 admin.site.register(ShipmentPackage)
 admin.site.register(ShipmentTracking)
 admin.site.register(HandOver)
 admin.site.register(IntraCityPackagePricing)
+
+
+

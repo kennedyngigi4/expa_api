@@ -14,6 +14,7 @@ from django.utils.text import slugify
 import qrcode.constants
 from apps.accounts.models import Office, User, DriverLocation, PartnerProfile
 from geopy.distance import geodesic
+from apps.fullloads.models import *
 # Create your models here.
 
 
@@ -71,6 +72,7 @@ class UrgencyLevel(models.Model):
 
 
 
+
 class IntraCityParcelPolicy(models.Model):
     max_weight = models.DecimalField(max_digits=10, decimal_places=2, default=15.00)
     max_distance_km = models.PositiveIntegerField(default=35)
@@ -105,6 +107,7 @@ class InterCountyRoute(models.Model):
         origins = ", ".join([office.name for office in self.origins.all()])
         destinations = ", ".join([office.name for office in self.destinations.all()])
         return f"{origins} ➝ {destinations} [{self.size_category.name}]"
+    
     
 
 class InterCountyWeightTier(models.Model):
@@ -168,6 +171,7 @@ class Package(models.Model):
 
     name = models.CharField(max_length=255, verbose_name=_("name")) 
     package_type = models.ForeignKey(PackageType, on_delete=models.SET_NULL, null=True, verbose_name=_("package type"))
+    vehicle_type = models.ForeignKey(VehicleType, on_delete=models.SET_NULL, null=True, blank=True)
     is_fragile = models.BooleanField(default=False, verbose_name=_("fragile"))
     urgency = models.ForeignKey(UrgencyLevel, on_delete=models.SET_NULL, null=True, verbose_name=_("urgency"))
     length = models.IntegerField(null=True, blank=True, verbose_name=_("length"))
@@ -270,6 +274,28 @@ class Package(models.Model):
 
     def __str__(self):
         return f"Package to {self.recipient_name}"
+
+
+def packageAttachmentsPath(instance, filename):
+    name = instance.package.package_id + filename
+    return f"packages/{name}"
+
+class PackageAttachment(models.Model):
+    package = models.ForeignKey(Package, on_delete=models.CASCADE, related_name="package_attachments")
+    attachment = models.FileField(upload_to=packageAttachmentsPath)
+
+    def __str__(self):
+        return f"{self.id} of {self.package.name}"
+
+
+class PackageItem(models.Model):
+    package = models.ForeignKey(Package, on_delete=models.CASCADE, related_name="package_items")
+    name = models.CharField(max_length=255)
+    weight = models.CharField(max_length=20, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Item: {self.name} of {self.package.name}"
 
 
 def ShipmentQRPath(instance, filename):

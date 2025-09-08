@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.deliveries.models import PackageType, Package, Shipment, SizeCategory, InterCountyRoute, ShipmentPackage, ShipmentTracking, HandOver, UrgencyLevel, ShipmentStage
+from apps.deliveries.models import VehicleType, VehiclePricing, PackageType, Package, Shipment, SizeCategory, InterCountyRoute, ShipmentPackage, ShipmentTracking, HandOver, UrgencyLevel, ShipmentStage
 from apps.messaging.models import Notification
 
 
@@ -28,6 +28,13 @@ class UrgencyLevelSerializer(serializers.ModelSerializer):
             "id", "name", "description", "surcharge_type", "surcharge_amount"
         ]
 
+
+class VehicleTypesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VehicleType
+        fields = [
+            "id", "name", "description"
+        ]
 
 
 class InterCountyRouteSerializer(serializers.ModelSerializer):
