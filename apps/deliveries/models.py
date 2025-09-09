@@ -476,7 +476,23 @@ class ShipmentTracking(models.Model):
         return f"Tracking shipment of {self.shipment.id}"
 
 
+# shipment proof of delivery
+class ProofOfDelivery(models.Model):
+    shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name="proofs")
+    image_pdf = models.FileField(upload_to="shipments/proofs")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
+    @property
+    def file_type(self):
+        if self.image_pdf.name.lower().endswith((".jpg", ".jpeg", ".png")):
+            return "image"
+        elif self.image_pdf.name.lower().endswith(".pdf"):
+            return "pdf"
+        return "unknown"
+
+    def __str__(self):
+        return f"{self.shipment.shipment_id}"
 
 
 class HandOver(models.Model):

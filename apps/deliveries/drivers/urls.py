@@ -7,6 +7,7 @@ urlpatterns = [
     path( "completed/", DriverCompletedShipmentsView.as_view(), name="completed", ),
     path( "shipment/<uuid:pk>/", DriverShipmentDetailView.as_view(), name="shipment", ),
     path( "shipments/<str:shipment_id>/update-status/", UpdateShipmentStatusView.as_view(), name="", ),
+    path( "shipments/<str:id>/proofs/", ProofofDeliveryView.as_view(), name="shipment-proofs", ),
     path( "notifications/", DriverNotificationsView.as_view(), name="notifications", ),
 ]
 

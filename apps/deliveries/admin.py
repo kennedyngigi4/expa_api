@@ -17,6 +17,7 @@ admin.site.register(Shipment)
 admin.site.register(ShipmentStage)
 admin.site.register(ShipmentPackage)
 admin.site.register(ShipmentTracking)
+admin.site.register(ProofOfDelivery)
 admin.site.register(HandOver)
 admin.site.register(IntraCityPackagePricing)
 
