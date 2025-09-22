@@ -83,12 +83,6 @@ REST_FRAMEWORK = {
 }
 
 
-# Firebase Admin SDK
-cred = credentials.Certificate(
-    os.path.join(BASE_DIR, "firebase.json")
-)
-firebase_admin.initialize_app(cred)
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

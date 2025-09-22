@@ -11,6 +11,7 @@ from apps.accounts.permissions import *
 from apps.messaging.models import *
 from apps.messaging.serializers import *
 from apps.drivers.models import *
+from apps.messaging.firebase import *
 # Create your views here.
 
 
@@ -27,6 +28,7 @@ class ClientNotificationsView(generics.ListAPIView):
     
 
 def intracity_drivers_notification(drivers, title, body, data=None):
+    init_firebase()
     tokens = list(
         DriverDevice.objects.filter(user__in=drivers)
         .exclude(fcm_token__isnull=True)
