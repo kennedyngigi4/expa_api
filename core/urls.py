@@ -12,6 +12,11 @@ urlpatterns = [
     path( 'api/account/superadmin/', include("apps.accounts.superadmin.urls")),
     path( 'api/account/partnershop/', include("apps.accounts.partnershop.urls")),
 
+
+    # Drivers-riders
+    path("api/drivers/", include("apps.drivers.urls")),
+
+
     # deliveries urls
     path( 'api/deliveries/', include("apps.deliveries.urls")),
     path( 'api/deliveries/superadmin/', include("apps.deliveries.superadmin.urls")),

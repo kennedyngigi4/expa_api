@@ -162,8 +162,7 @@ class PartnerProfile(models.Model):
 
 
 class DriverLocation(models.Model):
-
-    driver = models.OneToOneField(User, on_delete=models.CASCADE, limit_choices_to={ 'role__in': [ 'driver', 'partner_rider']})
+    driver = models.OneToOneField(User, on_delete=models.CASCADE, related_name="location", limit_choices_to={ 'role__in': [ 'driver', 'partner_rider']})
     latitude = models.DecimalField(max_digits=10, decimal_places=6)
     longitude = models.DecimalField(max_digits=10, decimal_places=6)
     updated_at = models.DateTimeField(auto_now=True)

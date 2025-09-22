@@ -1,4 +1,6 @@
 import os
+import firebase_admin
+from firebase_admin import credentials, messaging
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
@@ -62,8 +64,11 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
 
+    'fcm_django',
+
     'apps.accounts.apps.AccountsConfig',
     'apps.deliveries.apps.DeliveriesConfig',
+    'apps.drivers.apps.DriversConfig',
     'apps.messaging.apps.MessagingConfig',
     'apps.payments.apps.PaymentsConfig',
     'apps.corporate.apps.CorporateConfig',
@@ -76,6 +81,14 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+
+
+# Firebase Admin SDK
+cred = credentials.Certificate(
+    os.path.join(BASE_DIR, "firebase.json")
+)
+firebase_admin.initialize_app(cred)
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
