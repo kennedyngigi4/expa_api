@@ -23,12 +23,12 @@ class DriverStatistics(APIView):
 
         completed = Shipment.objects.filter(
             courier=courier,
-            status="completed"
+            status__in=["completed", "Completed", "Delivered", "delivered"]
         ).count()
 
         ongoing = Shipment.objects.filter(
             courier=courier,
-        ).exclude(status="completed").count()
+        ).exclude(status__in=["completed", "Completed", "Delivered", "delivered"]).count()
 
         wallet = Wallet.objects.get(
             user=courier
