@@ -82,7 +82,7 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Account is disabled.")
         
         # Partner verification check
-        if user.role in ['partner_rider', 'partner_shop']:
+        if user.role in ['partner_shop']:
             try:
                 partner_profile = PartnerProfile.objects.get(user=user)
                 if not partner_profile.is_verified:

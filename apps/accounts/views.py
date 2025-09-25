@@ -15,6 +15,7 @@ from apps.accounts.permissions import *
 class RegistrationView(APIView):
 
     def post(self, request):
+       
         serializer = RegistrationSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -25,7 +26,7 @@ class RegistrationView(APIView):
 class LoginView(APIView):
 
     def post(self, request):
-        print(request.data)
+        
         serializer = LoginSerializer(data=request.data)
 
         if serializer.is_valid():

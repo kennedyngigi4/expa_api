@@ -72,6 +72,6 @@ class DriverShipmentSerializer(serializers.ModelSerializer):
     
 
     def get_package(self, obj):
-        package = obj.packages.first()  # intracity has only one
+        package = obj.packages.first()
         return DriverOrderDetails(package).data if package else None
 

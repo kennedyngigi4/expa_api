@@ -30,9 +30,14 @@ class DriverStatistics(APIView):
             courier=courier,
         ).exclude(status="completed").count()
 
+        wallet = Wallet.objects.get(
+            user=courier
+        )
+
         return Response({
             "completed": completed,
-            "ongoing": ongoing
+            "ongoing": ongoing,
+            "amount": wallet.balance
         })
 
 
@@ -131,6 +136,18 @@ class AcceptDeliveryView(APIView):
             package, courier, manager=manager
         )
 
+        commission_rate = Decimal("0.20")
+        driver_earnings = package.fees * commission_rate
+        rider_wallet, _ = Wallet.objects.get_or_create(user=courier)
+        WalletTransaction.objects.create(
+            wallet =rider_wallet,
+            shipment=shipment,
+            amount=driver_earnings,
+            transaction_type="credit",
+            status="pending",
+            note=f"Reserved earnings for {shipment.shipment_id}"
+        )
+
         return Response({
             "success": True,
             "message": "Shipment created successfully.",
@@ -184,6 +201,7 @@ class ShipmentUpdateStatusView(APIView):
 
 
     def post(self, request, shipment_id):
+        courier = self.request.user
         action = request.data.get("action")
 
         try:
@@ -199,6 +217,16 @@ class ShipmentUpdateStatusView(APIView):
             shipment.status = "in_transit"
         elif action == "completed":
             shipment.status = "completed"
+            transaction = WalletTransaction.objects.filter(
+                wallet=courier.wallet,
+                shipment=shipment,
+                status="pending"
+            ).first()
+
+            if transaction:
+                transaction.status = "completed"
+                transaction.save()
+                courier.wallet.credit(transaction.amount)
         else:
             return Response({ "success": False, "message": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
         
