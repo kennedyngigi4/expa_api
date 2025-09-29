@@ -4,6 +4,8 @@ from decimal import Decimal
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from apps.accounts.permissions import IsClient
 from apps.fullloads.models import *
 from apps.fullloads.serializers import *
 from core.utils.services import get_road_distance_km
@@ -94,6 +96,17 @@ class CalculateFullloadPrice(APIView):
 
 
 
+class FullloadCreationView(APIView):
+    permission_classes = [ IsAuthenticated ]
 
+    def post(self, request, *args, **kwargs):
+        serializer = BookingWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(sender=self.request.user)
+
+        return Response({
+            "success": True,
+            "message": "Booked successfully.",
+        }, status=status.HTTP_201_CREATED)
 
 

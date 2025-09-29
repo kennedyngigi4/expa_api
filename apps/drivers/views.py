@@ -128,17 +128,31 @@ class AcceptDeliveryView(APIView):
         if package.origin_office:
             manager = User.objects.filter(
                 role="manager",
-                office=package.origin_office  # assuming User has office FK
+                office=package.origin_office 
             ).first()
 
         # Create shipment
         shipment = create_intracity_shipment(
             package, courier, manager=manager
         )
+        package.status = "assigned"
+        package.save()
+
+        # ShipmentPackage update
+        shipment_package, _ = ShipmentPackage.objects.get_or_create(
+            shipment=shipment,package=package
+        )
+        shipment_package.status = "assigned"
+        shipment_package.save()
+
+        # shipment update
+        shipment.status = "assigned"
+        shipment.save()
 
         commission_rate = Decimal("0.20")
         driver_earnings = package.fees * commission_rate
         rider_wallet, _ = Wallet.objects.get_or_create(user=courier)
+
         WalletTransaction.objects.create(
             wallet =rider_wallet,
             shipment=shipment,
@@ -215,8 +229,43 @@ class ShipmentUpdateStatusView(APIView):
 
         if action == "in_transit":
             shipment.status = "in_transit"
+            shipment.save()
+            
+            # stages 
+            ShipmentStage.objects.filter(
+                shipment=shipment, driver=courier, status__in=["created", "pending"]
+            ).update(status="in_transit")
+
+            # ShipmentPackages
+            ShipmentPackage.objects.filter(
+                shipment=shipment
+            ).update(status="in_transit")
+
+            # Packages
+            Package.objects.filter(
+                shipments=shipment
+            ).update(status="in_transit")
+
         elif action == "completed":
             shipment.status = "completed"
+            shipment.save()
+            
+            # stages 
+            ShipmentStage.objects.filter(
+                shipment=shipment, driver=courier
+            ).update(status="completed")
+
+            # ShipmentPackages
+            ShipmentPackage.objects.filter(
+                shipment=shipment
+            ).update(status="delivered")
+
+            # Packages
+            Package.objects.filter(
+                shipments=shipment
+            ).update(status="delivered")
+
+
             transaction = WalletTransaction.objects.filter(
                 wallet=courier.wallet,
                 shipment=shipment,

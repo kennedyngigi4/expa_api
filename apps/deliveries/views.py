@@ -8,7 +8,7 @@ from django.db.models import Sum
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.response import Response
 
 from geopy.distance import geodesic
@@ -72,26 +72,15 @@ class BusinessAccountStatsView(APIView):
 
 
 
-
-
-class CustomerPackagesView(generics.ListCreateAPIView):
+class AddOrderView(generics.CreateAPIView):
     serializer_class = PackageWriteSerializer
     queryset = Package.objects.all()
     permission_classes = [ IsAuthenticated, IsOwnerOrAdmin ]
 
-    def get_queryset(self):
-        user = self.request.user
-        return Package.objects.filter(
-            Q(created_by=user)
-        ).distinct().order_by('-created_at')
-    
-
     def post(self, request, *args, **kwargs):
-        
         serializer = self.get_serializer(data=request.data)
         try:
             
-
             if serializer.is_valid():
                 user = self.request.user
 
@@ -128,6 +117,21 @@ class CustomerPackagesView(generics.ListCreateAPIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class CustomerPackagesView(generics.ListAPIView):
+    serializer_class = PackageSerializer
+    queryset = Package.objects.all()
+    permission_classes = [ IsAuthenticated, IsOwnerOrAdmin ]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Package.objects.filter(
+            Q(created_by=user)
+        ).distinct().order_by('-created_at')
+    
+
+    
+
+
 class CustomerPackageRetrieveEditDeleteView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PackageSerializer
     queryset = Package.objects.all()
@@ -139,7 +143,7 @@ class CustomerPackageRetrieveEditDeleteView(generics.RetrieveUpdateDestroyAPIVie
             return super().get_object()
 
         except:
-            return Response({ "success": False, "message": "Package not found with this slug."})
+            raise NotFound(detail="Package not found with this slug.")
 
 
     def retrieve(self, request, *args, **kwargs):
@@ -174,7 +178,7 @@ class CustomerPackageRetrieveEditDeleteView(generics.RetrieveUpdateDestroyAPIVie
         return Response({
             "success": True,
             "message": "Package deleted successfully."
-        }, status=status.HTTP_204_NO_CONTENT)
+        }, status=status.HTTP_200_OK)
 
 
 
@@ -203,7 +207,7 @@ def calculate_chargeable_weight(actual_weight_kg, length_cm, width_cm, height_cm
 class IntraCityPriceCalculationView(APIView):
     def post(self, request):
         data = request.data
-        
+
         try:
             size_category = data.get("size_category")
             size_category = SizeCategory.objects.get(id=size_category)
@@ -245,8 +249,6 @@ class IntraCityPriceCalculationView(APIView):
             elif size_category.name.lower() == "package":
                 chargeable_weight = calculate_chargeable_weight(weight, length, width, height)
                 chargeable_weight = Decimal(chargeable_weight).quantize(Decimal("1.00"), rounding=ROUND_HALF_UP)
-
-                print(chargeable_weight)
 
                 pricing = IntraCityPackagePricing.objects.filter(
                     min_weight__lte=chargeable_weight,
@@ -389,9 +391,9 @@ class InterCountyPriceCalculator(APIView):
             return Response({
                 "success": True,
                 "pickup_fee": round(pickup_fee),
-                "estimated_fee": round(total_price),
+                "base_fee": round(total_price),
                 "last_mile_fee": round(last_mile_fee),
-                "total_fee": round(final_fee),
+                "estimated_fee": round(final_fee),
                 "origin_office_id": origin_office.id,
                 "destination_office_id": destination_office.id,
                 "chargeable_weight": round(chargeable_weight, 2),

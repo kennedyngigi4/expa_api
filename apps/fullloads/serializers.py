@@ -8,3 +8,18 @@ class VehicleTypesSerializer(serializers.ModelSerializer):
         fields = [
             "id", "name", "description"
         ]
+
+
+class BookingWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Booking
+        fields = [
+            "id", "sender", "vehicle", "pickup_address", "dropoff_address", "distance", "price", "weight", "created_at" 
+        ]
+
+        read_only_fields = [
+            "id", "sender", "created_at" 
+        ]
+
+
+

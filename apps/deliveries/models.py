@@ -142,14 +142,15 @@ def UserPackageImgPath(instance, filename):
 
 
 class PackageStatus(models.TextChoices):
-    PENDING = "PENDING", "PENDING"
-    ASSIGNED = "ASSIGNED", "ASSIGNED"
-    IN_TRANSIT = "IN_TRANSIT", "IN_TRANSIT"
-    DELIVERED = "DELIVERED", "DELIVERED"
-    RECEIVED = "RECEIVED", "RECEIVED"
-    RETURNED = "RETURNED", "RETURNED"
-    CANCELLED = "CANCELLED", "CANCELLED"
-    HANDOVER = "HANDOVER", "HANDOVER"
+    PENDING = "pending", "pending"
+    ASSIGNED = "assigned", "assigned"
+    IN_TRANSIT = "in_transit", "in_transit"
+    DELIVERED = "delivered", "delivered"
+    RECEIVED = "received", "received"
+    RETURNED = "returned", "returned"
+    CANCELLED = "cancelled", "cancelled"
+    HANDOVER = "handover", "handover"
+    COMPLETED = "completed", "completed"
 
 
 class Package(models.Model):

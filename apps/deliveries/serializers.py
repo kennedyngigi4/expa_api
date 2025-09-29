@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from apps.accounts.models import *
 from apps.deliveries.models import VehicleType, VehiclePricing, PackageType, Package, Shipment, SizeCategory, InterCountyRoute, ShipmentPackage, ShipmentTracking, HandOver, UrgencyLevel, ShipmentStage
 from apps.messaging.models import Notification
 
@@ -82,6 +84,7 @@ class PackageSerializer(serializers.ModelSerializer):
     size_category_name = serializers.SerializerMethodField()
     urgency_name = serializers.SerializerMethodField()
     package_type_name = serializers.SerializerMethodField()
+    rider_location = serializers.SerializerMethodField()
 
     class Meta:
         model = Package
@@ -89,7 +92,7 @@ class PackageSerializer(serializers.ModelSerializer):
             "id","slug","name", "package_type", "package_type_name", "size_category", "size_category_name", "delivery_type", "is_fragile", "urgency", "urgency_name",
             "length", "width", "height", "weight", "pickup_date", "description", "sender_name", "sender_phone", "sender_address", 
             "sender_latLng", "is_paid", "recipient_name", "recipient_phone", "recipient_address", "recipient_latLng", 
-            "package_id", "status", "created_by_role", "created_at"
+            "package_id", "status", "created_by_role", "created_at", "fees", "rider_location"
         ]
         read_only_fields = [
             "id", "package_id", "current_handler", "delivery_stage_count", "current_stage"
@@ -109,6 +112,39 @@ class PackageSerializer(serializers.ModelSerializer):
 
     def get_package_type_name(self, obj):
         return getattr(obj.package_type, "name", None)
+
+
+    def get_rider_location(self, obj):
+        shipment = obj.shipments.order_by("-assigned_at").first()
+
+        if not shipment or shipment.status != "in_transit":
+            return None
+        
+        courier = shipment.courier
+        if not courier:
+            return None
+
+        data = {
+            "name": courier.full_name,
+            "phone": courier.phone,
+            "lat": None,
+            "lng": None,
+            "updated_at": None
+        }
+
+        try: 
+            location = courier.location
+            data.update({
+                "lat": location.latitude,
+                "lng": location.longitude,
+                "updated": location.updated_at,
+
+            })
+
+        except DriverLocation.DoesNotExist:
+            return None
+        
+        return data
 
 
 
