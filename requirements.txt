@@ -15,7 +15,7 @@ click-plugins==1.1.1.2
 click-repl==0.3.0
 cryptography==45.0.7
 cssselect2==0.8.0
-Django==5.2.3
+Django==4.2.24
 django-cors-headers==4.7.0
 django-filter==25.1
 djangorestframework==3.16.0
