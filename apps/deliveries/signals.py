@@ -1,8 +1,10 @@
+import datetime
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 from apps.accounts.models import *
 from apps.deliveries.models import *
-from apps.drivers.views import get_nearby_drivers
+from apps.deliveries.tasks import send_intracity_notifications
 from apps.payments.models import Invoice
 from apps.messaging.models import Notification
 from apps.messaging.views import *
@@ -12,33 +14,16 @@ from decimal import Decimal
 @receiver(post_save, sender=Package)
 def send_intracity_notifications_to_drivers(sender, instance, created, **kwargs):
     if created and instance.delivery_type == "intra_city":
-        print("Signal triggered for package:", instance.id)
+        if instance.pickup_date:
+            eta = timezone.make_aware(instance.pickup_date) if timezone.is_naive(instance.pickup_date) else instance.pickup_date
 
-        if not instance.sender_latLng:
-            print("No sender_latLng, skipping...")
-            return
-
-        try:
-            lat, lng = instance.sender_latLng.split(",")
-            pickup_coords = (float(lat.strip()), float(lng.strip()))
-        except ValueError:
-            print("Invalid latLng format:", instance.sender_latLng)
-            return
-
-        nearby_drivers = get_nearby_drivers(pickup_coords, radius_km=5)
-        print("Nearby drivers found:", nearby_drivers)
-
-        if nearby_drivers:
-            intracity_drivers_notification(
-                drivers=nearby_drivers,  # now proper driver objects
-                title="🚚 New Intracity Order",
-                body=f"Pickup at {instance.sender_latLng}",
-                data={"type": "new_order", "order_id": str(instance.id)},
-            )
-            print("Sent >>>>>>>>>>>>>>>>")
-        else:
-            print("No nearby drivers")
-
+            if eta > timezone.now():
+                send_intracity_notifications.apply_async(
+                    args=(instance.id,), 
+                    eta=eta
+                )
+            else:
+                send_intracity_notifications.delay(instance.id)
 
 
 @receiver(post_save, sender=Package)

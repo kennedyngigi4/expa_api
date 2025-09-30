@@ -37,4 +37,20 @@ def get_road_distance_km(origin, destination):
 
 
 
+def get_nearby_drivers(pickup_coords, radius_km=5):
+    nearby_drivers = []
+
+    for driver_location in DriverLocation.objects.select_related("driver"):
+        driver_coords = (float(driver_location.latitude), float(driver_location.longitude))
+        distance = geodesic(pickup_coords, driver_coords).km
+
+        if distance <= radius_km:
+            nearby_drivers.append(driver_location.driver)  # ✅ return driver instead of location
+
+    return nearby_drivers
+
+
+
+
+
 
