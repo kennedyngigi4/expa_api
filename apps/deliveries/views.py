@@ -19,7 +19,7 @@ from apps.accounts.permissions import *
 from apps.deliveries.models import *
 from apps.deliveries.serializers import *
 from apps.payments.models import *
-from apps.payments.mpesa import MPESA
+from core.utils.payments import NobukPayments
 
 
 gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
@@ -84,20 +84,25 @@ class AddOrderView(generics.CreateAPIView):
             if serializer.is_valid():
                 user = self.request.user
 
-                serializer.save(
+                order = serializer.save(
                     created_by=self.request.user,
                     created_by_role=self.request.user.role,
                     sender_user=user,
                 )
 
-                payable_amount = int(round(float(request.data["fees"])))
-                # mpesa = MPESA(request.data["sender_phone"], payable_amount).MpesaSTKPush()
-                
+                payable_amount = request.data["fees"]
+                mpesa_number = request.data["payment_phone"]
+
+                print(mpesa_number)
+                print(payable_amount)
+                # Initiate STKPush payments 
+                if user.account_type == "personal":
+                    payments = NobukPayments(mpesa_number, user.full_name, order.package_id, payable_amount, "web").STKPush()
+                   
 
                 return Response({
                     "success": True,
                     "message": "Package created successfully.",
-                    "data": serializer.data
                 }, status=status.HTTP_201_CREATED)
             
                 

@@ -171,16 +171,16 @@ class Package(models.Model):
     delivery_type = models.CharField(max_length=20, choices=DELIVERY_TYPES, verbose_name=_("delivery type"))
 
     name = models.CharField(max_length=255, verbose_name=_("name")) 
-    package_type = models.ForeignKey(PackageType, on_delete=models.SET_NULL, null=True, verbose_name=_("package type"))
+    package_type = models.ForeignKey(PackageType, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("package type"))
     vehicle_type = models.ForeignKey(VehicleType, on_delete=models.SET_NULL, null=True, blank=True)
     is_fragile = models.BooleanField(default=False, verbose_name=_("fragile"))
-    urgency = models.ForeignKey(UrgencyLevel, on_delete=models.SET_NULL, null=True, verbose_name=_("urgency"))
+    urgency = models.ForeignKey(UrgencyLevel, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("urgency"))
     length = models.IntegerField(null=True, blank=True, verbose_name=_("length"))
     width = models.IntegerField(null=True, blank=True, verbose_name=_("width"))
     height = models.IntegerField(null=True, blank=True, verbose_name=_("height"))
     weight = models.IntegerField(null=True, blank=True, verbose_name=_("weight"))
     pickup_date = models.DateTimeField(null=True, blank=True, verbose_name=_("pickup date time"))
-    description = models.TextField(verbose_name=_("description"))
+    description = models.TextField(null=True, blank=True, verbose_name=_("description"))
     fees = models.DecimalField(max_digits=15, decimal_places=6, null=True, verbose_name=_("fee charged"))
     image = models.ImageField(upload_to=UserPackageImgPath, null=True, blank=True, verbose_name=_("package image"))
 
@@ -210,6 +210,7 @@ class Package(models.Model):
     created_by_role = models.CharField(max_length=30, blank=True, null=True)
     sender_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='sent_packages')
     status = models.CharField(max_length=30, choices=PackageStatus.choices, default=PackageStatus.PENDING,)
+    payment_phone = models.CharField(max_length=20, null=True, blank=True, verbose_name=_("payment phone"))
 
     def save(self, *args, **kwargs):
         if not self.package_id:
