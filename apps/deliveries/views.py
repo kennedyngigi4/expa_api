@@ -20,6 +20,7 @@ from apps.deliveries.models import *
 from apps.deliveries.serializers import *
 from apps.payments.models import *
 from core.utils.payments import NobukPayments
+from core.utils.emails import send_order_creation_email
 
 
 gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
@@ -93,12 +94,15 @@ class AddOrderView(generics.CreateAPIView):
                 payable_amount = request.data["fees"]
                 mpesa_number = request.data["payment_phone"]
 
-                print(mpesa_number)
-                print(payable_amount)
+                
                 # Initiate STKPush payments 
                 if user.account_type == "personal":
-                    payments = NobukPayments(mpesa_number, user.full_name, order.package_id, payable_amount, "web").STKPush()
+                   NobukPayments(mpesa_number, user.full_name, order.package_id, payable_amount, "web").STKPush()
                    
+
+                # Send creation email
+                send_order_creation_email(user, order)
+
 
                 return Response({
                     "success": True,

@@ -31,6 +31,7 @@ urlpatterns = [
 
     # Full loads urls
     path( "api/fullloads/", include("apps.fullloads.urls")),
+    path( "api/fullloads/manager/", include("apps.fullloads.manager.urls")),
 
     # messaging urls
     path( "api/messaging/", include("apps.messaging.urls")),

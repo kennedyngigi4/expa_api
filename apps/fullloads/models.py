@@ -1,6 +1,10 @@
+import random
+import string
 import uuid
 from django.db import models
-from apps.accounts.models import User
+from apps.accounts.models import Office, User
+from django.utils.translation import gettext_lazy as _
+from geopy.distance import geodesic
 # Create your models here.
 
 
@@ -52,22 +56,65 @@ class VehiclePricing(models.Model):
     def __str__(self):
         return f"{self.vehicle.name} | {self.weight.name} | {self.band.name}"
     
-
+def generateID(pref):
+    random_id = "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    return f"{pref}{random_id}"
 
 class Booking(models.Model):
     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False, unique=True)
+    booking_id = models.CharField(max_length=20, unique=True, null=True)
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="customer")
     vehicle = models.ForeignKey(VehicleType, on_delete=models.SET_NULL, null=True, related_name="booked_vehicle")
     pickup_address = models.CharField(max_length=255)
+    pickup_latLng = models.CharField(max_length=70, null=True, verbose_name=_("sender latitude,longitude"))
     dropoff_address = models.CharField(max_length=255)
+    origin_office = models.ForeignKey(Office, null=True, blank=True, on_delete=models.SET_NULL, related_name='origin')
     distance =  models.DecimalField(max_digits=10, decimal_places=2)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     weight = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
+    payment_phone = models.CharField(max_length=20, null=True, blank=True, verbose_name=_("payment phone"))
+
+
+    def save(self, *args, **kwargs):
+        if not self.booking_id:
+            while True:
+                new_id = generateID("FL")
+                if not Booking.objects.filter(booking_id=new_id).exists():
+                    self.booking_id = new_id
+                    break
+
+        if not self.origin_office:
+            try: 
+                lat, lng = map(float, self.pickup_latLng.split(","))
+                self.origin_office = self.get_nearest_office(lat, lng)
+
+            except Exception as e:
+                print(f"Error parsing sender coordinates: {e}")
+
+        super().save(*args, **kwargs)
+
+
+    @staticmethod
+    def get_nearest_office(lat, lng):
+        offices = Office.objects.all()
+        package_coords = (float(lat), float(lng))
+
+        nearest = None
+        min_distance = float("inf")
+
+        for office in offices:
+            office_coords = (float(office.geo_lat), float(office.geo_lng))
+            distance = geodesic(package_coords, office_coords).km
+
+            if distance < min_distance:
+                min_distance = distance
+                nearest = office
+        return nearest
 
 
     def __str__(self):
-        return f"{self.sender.full_name} booked {self.vehicle.name}"
+        return f"{self.booking_id} ~ by {self.sender.full_name}"
 
 
 

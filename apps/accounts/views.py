@@ -9,6 +9,7 @@ from rest_framework.permissions import *
 from apps.accounts.models import *
 from apps.accounts.serializers import *
 from apps.accounts.permissions import *
+from core.utils.emails import send_welcome_email
 # Create your views here.
 
 
@@ -18,9 +19,11 @@ class RegistrationView(APIView):
        
         serializer = RegistrationSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            user = serializer.save()
+            send_welcome_email(user)
             return Response({ "success": True, "message": "Registration successful" }, status=status.HTTP_201_CREATED)
         return Response({ "success": False, "message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class LoginView(APIView):

@@ -9,6 +9,7 @@ from apps.accounts.permissions import IsClient
 from apps.fullloads.models import *
 from apps.fullloads.serializers import *
 from core.utils.services import get_road_distance_km
+from core.utils.payments import NobukPayments
 # Create your views here.
 
 
@@ -102,7 +103,14 @@ class FullloadCreationView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = BookingWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(sender=self.request.user)
+        
+        mpesa_phone = request.data["payment_phone"]
+        order = serializer.save(sender=self.request.user)
+
+        
+        
+        if order:
+            NobukPayments(mpesa_phone, self.request.user.full_name, order.booking_id, str(round(order.price)), "web").STKPush()
 
         return Response({
             "success": True,

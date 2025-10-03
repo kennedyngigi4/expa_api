@@ -158,3 +158,11 @@ def generate_invoice_pdf(request, invoice_id):
 
 
 
+
+
+class PaymentCallbackView(APIView):
+    def get(self, request):
+        print(request.data)
+
+
+
