@@ -168,11 +168,7 @@ def generate_invoice_pdf(request, invoice_id):
 @method_decorator(csrf_exempt, name='dispatch')
 class PaymentCallbackView(APIView):
     def post(self, request, *args, **kwargs):
-        print("Payment callback received:", request.data)
-
-        tx_ref = request.data.get('transaction_reference')
-        status = request.data.get('status')
-        amount = request.data.get('amount')
+        PaymentsLog.objects.create(data=request.data)
 
         return Response({"status": "ok"})
 

@@ -70,3 +70,15 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"{self.reference} - {self.status}"
+    
+
+
+
+class PaymentsLog(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    data = models.JSONField(default=dict, blank=True)
+
+    def __str__(self):
+        return str(self.created_at)
+
+
