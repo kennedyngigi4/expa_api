@@ -16,6 +16,7 @@ from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -167,9 +168,14 @@ def generate_invoice_pdf(request, invoice_id):
 @method_decorator(csrf_exempt, name='dispatch')
 class PaymentCallbackView(APIView):
     def post(self, request, *args, **kwargs):
+        print("Payment callback received:", request.data)
 
-        print("Payment callback data", request.data)
-        payload = json.loads(request.body.decode('utf-8'))
+        tx_ref = request.data.get('transaction_reference')
+        status = request.data.get('status')
+        amount = request.data.get('amount')
+
+        return Response({"status": "ok"})
+
 
         
 
