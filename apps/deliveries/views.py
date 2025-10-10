@@ -92,6 +92,7 @@ class AddOrderView(generics.CreateAPIView):
                     sender_user=user,
                 )
 
+                
 
                 payable_amount = request.data["fees"]
                 mpesa_number = request.data["payment_phone"]
@@ -285,7 +286,7 @@ class IntraCityPriceCalculationView(APIView):
             return Response({
                 "success": True,
                 "distance_km": round(distance_km, 2),
-                "estimated_fee": round(price)
+                "total_fee": round(price)
             })
 
         except Exception as e:
@@ -407,11 +408,11 @@ class InterCountyPriceCalculator(APIView):
                 "pickup_fee": round(pickup_fee),
                 "base_fee": round(total_price),
                 "last_mile_fee": round(last_mile_fee),
-                "estimated_fee": round(final_fee),
+                "total_fee": round(final_fee),
                 "origin_office_id": origin_office.id,
                 "destination_office_id": destination_office.id,
                 "chargeable_weight": round(chargeable_weight, 2),
-                # "base_limit": base_limit
+                
             })
 
 
