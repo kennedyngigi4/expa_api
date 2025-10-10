@@ -1,4 +1,4 @@
-
+import json
 from django.shortcuts import render
 from django.template.loader import select_template, render_to_string
 from django.http import HttpResponse
@@ -17,6 +17,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+
 
 
 from apps.payments.models import *
@@ -160,9 +164,13 @@ def generate_invoice_pdf(request, invoice_id):
 
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class PaymentCallbackView(APIView):
-    def get(self, request):
-        print(request.data)
+    def post(self, request, *args, **kwargs):
 
+        print("Payment callback data", request.data)
+        payload = json.loads(request.body.decode('utf-8'))
+
+        
 
 

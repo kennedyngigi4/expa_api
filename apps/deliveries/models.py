@@ -211,6 +211,7 @@ class Package(models.Model):
     sender_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='sent_packages')
     status = models.CharField(max_length=30, choices=PackageStatus.choices, default=PackageStatus.PENDING,)
     payment_phone = models.CharField(max_length=20, null=True, blank=True, verbose_name=_("payment phone"))
+    pickup_now = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         if not self.package_id:

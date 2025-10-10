@@ -5,17 +5,19 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: #f5f5f5;
+            background: #f2f2f2;
             margin: 0;
             padding: 0;
+            width: 100%;
         }
 
         .container {
-            max-width: 600px;
+            max-width: 80%;
             margin: 20px auto;
             background: #ffffff;
             border-radius: 8px;
             overflow: hidden;
+            box-shadow: 1px 1px 55px 29px rgba(186,186,186,1); -webkit-box-shadow: 1px 1px 55px 29px rgba(186,186,186,1); -moz-box-shadow: 1px 1px 55px 29px rgba(186,186,186,1);
         }
 
         .header {
@@ -42,7 +44,7 @@
 
         .btn {
             background: #ff6600;
-            color: white;
+            color: #ffffff;
             padding: 10px 20px;
             text-decoration: none;
             border-radius: 5px;
@@ -51,7 +53,7 @@
         }
 
         .footer {
-            background: #333333;
+            background: #ffa500;
             color: #ffffff;
             text-align: center;
             padding: 15px;
@@ -59,7 +61,7 @@
         }
 
         .footer a {
-            color: #ffcc00;
+            color: #000000;
             text-decoration: none;
         }
     </style>
@@ -75,7 +77,7 @@
 
         <!-- Main Content -->
         <div class="content">
-            <h2>Hi {{ user.first_name }}, your order has been created!</h2>
+            <h2>Hi {{ user.full_name }}, your order has been created!</h2>
             <p>We've received your order and it's now being processed.</p>
 
             <h3>Order Details</h3>
@@ -93,7 +95,9 @@
 
         <!-- Footer -->
         <div class="footer">
-            <p> 📞 020 258 5290 | 📞 0722 620 988 | 📞 0734 620 988 | ✉️ info@expa.co.ke</p>
+            
+            <p> 📞 020 258 5290 | 📞 0722 620 988 | 📞 0734 620 988 </p> 
+            <p>✉️ info@expa.co.ke</p>
             <p>
                 <a href="#">Unsubscribe</a>
             </p>

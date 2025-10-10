@@ -12,7 +12,7 @@ from apps.accounts.models import *
 from apps.accounts.permissions import *
 from apps.deliveries.models import *
 from apps.deliveries.partnershop.serializers import *
-from apps.payments.mpesa import MPESA
+
 
 gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
 
@@ -52,7 +52,7 @@ class PackageUploadView(generics.ListCreateAPIView):
                 sender_address=office.geo_loc,
                 sender_latLng=f"{office.geo_lat}, {office.geo_lng}"
             )
-            MPESA(request.data["sender_phone"], request.data["fees"]).MpesaSTKPush()
+            
             return Response({ "success": True, "message" : "Upload successful."}, status=status.HTTP_201_CREATED)
         
         return Response({ "success": False, "message": serializer.errors }, status=status.HTTP_400_BAD_REQUEST)
