@@ -53,21 +53,26 @@ class ManagerOriginPackagesView(ListAPIView):
     def get_queryset(self):
         user = self.request.user
         category = self.request.query_params.get("category")
+        delivery_type = self.request.query_params.get("delivery_type")
 
         if not user.office:
             return Package.objects.none()
         
         queryset = Package.objects.all().order_by("-created_at")
 
-        if category == "unassigned":
-            queryset = queryset.filter(shipments=None, origin_office=user.office)
-        if category == "received":
-            queryset = queryset.filter(status="RECEIVED", origin_office=user.office)
+        
+        if delivery_type in ["intra_city", "inter_county", "international"]:
+            queryset = queryset.filter(delivery_type=delivery_type)
+        
 
+        if category == "pending":
+            queryset = queryset.filter(shipments=None, status="pending", origin_office=user.office)
+        if category == "received":
+            queryset = queryset.filter(status="received", origin_office=user.office)
         elif category == "assigned":
             queryset = queryset.filter(shipments__isnull=False, status="assigned", origin_office=user.office)
         elif category == "incoming":
-            queryset == queryset.filter(destination_office=user.office, shipments__isnull=False, status="assigned").exclude(origin_office=user.office)
+            queryset = queryset.filter(destination_office=user.office, shipments__isnull=False, status="assigned").exclude(origin_office=user.office)
         elif category == "in_transit":
             queryset = queryset.filter(shipments__status="in_transit", origin_office=user.office)
         elif category == "delivered":
@@ -128,18 +133,18 @@ class ManagerListShipmentView(generics.ListCreateAPIView):
 
         if category == "assigned":
             queryset = queryset.filter(status="created")
-        elif category == "IN_TRANSIT":
-            queryset = queryset.filter(status="IN_TRANSIT")
-        elif category == "RECEIVED":
+        elif category == "in_transit":
+            queryset = queryset.filter(status="in_transit")
+        elif category == "received":
             queryset = queryset.filter(confirm_received=True)
-        elif category == "DELIVERED":
-            queryset = queryset.filter(status="DELIVERED")
-        elif category == "RETURNED":
-            queryset = queryset.filter(status="RETURNED")
-        elif category == "CANCELLED":
-            queryset = queryset.filter(status="CANCELLED")
+        elif category == "delivered":
+            queryset = queryset.filter(status="delivered")
+        elif category == "returned":
+            queryset = queryset.filter(status="returned")
+        elif category == "cancelled":
+            queryset = queryset.filter(status="cancelled")
 
-        elif category == "ALL":
+        elif category == "all":
             queryset = queryset
 
         return queryset

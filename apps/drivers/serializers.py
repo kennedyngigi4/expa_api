@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from apps.accounts.models import *
 from apps.deliveries.models import *
+from apps.drivers.models import *
 
 
 class DriverLocationSerializer(serializers.ModelSerializer):
@@ -75,3 +76,18 @@ class DriverShipmentSerializer(serializers.ModelSerializer):
         package = obj.packages.first()
         return DriverOrderDetails(package).data if package else None
 
+
+
+
+
+class WalletTransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WalletTransaction
+        fields = [
+            "id",
+            "amount",
+            "transaction_type",
+            "status",
+            "note",
+            "created_at",
+        ]

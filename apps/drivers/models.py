@@ -23,6 +23,9 @@ class DriverDevice(models.Model):
 class Wallet(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="wallet")
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    completed_deliveries_since_withdrawal = models.PositiveIntegerField(default=0)
+    last_withdrawal = models.DateTimeField(null=True, blank=True)
+    
 
     def credit(self, amount):
         self.balance += amount
@@ -42,27 +45,35 @@ class Wallet(models.Model):
 
 class WalletTransaction(models.Model):
     TRANSACTION_TYPES = [
-        ("credit", "Credit"),
-        ("debit", "Debit"),
+        ("credit", "Credit"),   
+        ("debit", "Debit"),   
     ]
 
-
     STATUS_CHOICES = [
-        ("pending", "Pending"),
-        ("completed", "Completed"),
-        ("cancelled", "Cancelled"),
+        ("pending", "Pending"),       
+        ("completed", "Completed"),   
+        ("cancelled", "Cancelled"),   
     ]
 
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="transactions")
     shipment = models.ForeignKey(Shipment, on_delete=models.SET_NULL, null=True, blank=True, related_name="wallet_transactions")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
-    created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
     note = models.TextField(null=True, blank=True)
 
+    # New fields
+    is_withdrawal_request = models.BooleanField(default=False)
+    requested_at = models.DateTimeField(null=True, blank=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.wallet.user.full_name} - {self.transaction_type} {self.amount}"
+
+    class Meta:
+        ordering = ["-created_at"]
+
 
 

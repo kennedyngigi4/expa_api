@@ -97,17 +97,18 @@ class AddOrderView(generics.CreateAPIView):
                 payable_amount = request.data["fees"]
                 mpesa_number = request.data["payment_phone"]
                 
-                
-                # Initiate STKPush payments 
-                if user.account_type == "personal": 
-                    if request.data["payment_method"] == "mpesa":
-                        NobukPayments(mpesa_number, user.full_name, order.package_id, payable_amount, "web").STKPush()
-                    elif request.data["payment_method"] == "card":
-                        print("Card ", request.data["cardholder_name"])
+                invoice = Invoice.objects.get(package=order)
+                if invoice:
+                    # Initiate STKPush payments 
+                    if user.account_type == "personal": 
+                        if request.data["payment_method"] == "mpesa":
+                            NobukPayments(mpesa_number, user.full_name, invoice.invoice_id, payable_amount, "web").STKPush()
+                        elif request.data["payment_method"] == "card":
+                            print("Card ", request.data["cardholder_name"])
                    
 
                 # Send creation email
-                send_order_creation_email(user, order)
+                # send_order_creation_email(user, order)
                 send_notification(user, f"Order {order.package_id}", "You order was submitted successfully.")
 
                 return Response({

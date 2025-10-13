@@ -32,50 +32,22 @@ class Invoice(models.Model):
 
 
 class Payment(models.Model):
-    PAYMENT_METHODS = [
-        ( 'mpesa', 'M-PESA', ),
-        ( 'airtel_money', 'Airtel Money', ),
-        ( 'card', 'Card', ),
-        ( 'bank_transfer', 'Bank Transfer', ),
-        ( "cash", "Cash Payment"),
-    ]
-
-
-    PAYMENT_STATUS = [
-        ( 'pending', 'pending', ),
-        ( 'successful', 'Successful', ),
-        ( 'failed', 'Failed', ),
-    ]
-
+   
     id = models.UUIDField(primary_key=True, editable=False, unique=True, default=uuid.uuid4)
-    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE)
-
-    payer_name = models.CharField(max_length=100)
-    payer_phone = models.CharField(max_length=20)
-    
-    payment_method = models.CharField(max_length=100, choices=PAYMENT_METHODS)
-    status = models.CharField(max_length=100, choices=PAYMENT_STATUS)
-    reference = models.CharField(max_length=100, unique=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    confirmed_at = models.DateTimeField(null=True, blank=True)
-    received_by = models.ForeignKey(
-        User, 
-        null=True, 
-        blank=True, 
-        on_delete=models.SET_NULL,
-        related_name='received_cash_payments',
-        help_text="Staff who confirmed the cash payment"
-    )
+    invoice_id = models.ForeignKey(Invoice, on_delete=models.SET_NULL, null=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=4, null=True)
+    transaction_code = models.CharField(max_length=255, null=True)
+    customer_name = models.CharField(max_length=255, null=True)
+    phone_number = models.CharField(max_length=50, null=True, blank=True)
+    date_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.reference} - {self.status}"
-    
-
+        return self.transaction_code
 
 
 class PaymentsLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
+    invoice_id = models.CharField(max_length=50, null=True)
     data = models.JSONField(default=dict, blank=True)
 
     def __str__(self):

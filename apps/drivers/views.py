@@ -102,7 +102,7 @@ class AcceptDeliveryView(APIView):
         # Check if package already in shipment
         existing_shipment = Shipment.objects.filter(
             packages=package,
-            status__in=["created", "in_transit"]
+            status__in=["created", "pending", "assigned", "in_transit"]
         ).first()
 
 
@@ -121,10 +121,20 @@ class AcceptDeliveryView(APIView):
                 office=package.origin_office 
             ).first()
 
-        # Create shipment
-        shipment = create_intracity_shipment(
-            package, courier, manager=manager
-        )
+        # Select shipment creation type
+        if package.delivery_type == "intra_city":
+            shipment = create_intracity_shipment(
+                package, courier, manager=manager
+            )
+        
+        elif package.delivery_type == "inter_county" and package.requires_pickup:
+            shipment = create_inoffice_shipment(package, courier, manager)
+        else:
+            return Response({
+                "success": False,
+                "message": "This package type is not available for direct rider pickup."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         package.status = "assigned"
         package.save()
 
@@ -163,6 +173,7 @@ class DriverCompletedShipmentsView(APIView):
     permission_classes = [IsAuthenticated, IsRider]
     def get(self, request, *args, **kwargs):
         driver = request.user
+
         shipments = Shipment.objects.filter(
             courier=driver,
             status="completed"
@@ -238,6 +249,7 @@ class ShipmentUpdateStatusView(APIView):
 
         elif action == "completed":
             shipment.status = "completed"
+
             shipment.save()
             
             # stages 
@@ -266,6 +278,12 @@ class ShipmentUpdateStatusView(APIView):
                 transaction.status = "completed"
                 transaction.save()
                 courier.wallet.credit(transaction.amount)
+
+            # Increment delivery counts
+            wallet = courier.wallet
+            wallet.completed_deliveries_since_withdrawal += 1
+            wallet.save()
+
         else:
             return Response({ "success": False, "message": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -277,5 +295,89 @@ class ShipmentUpdateStatusView(APIView):
             "message": "Update successful."
         }, status=status.HTTP_200_OK)
         
+
+
+class WithdrawalWalletView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        rider = request.user
+        wallet = getattr(rider, "wallet", None)
+
+        if not wallet:
+            return Response({
+                "success": False,
+                "message": "Wallet not found."
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        
+        if wallet.completed_deliveries_since_withdrawal < 10:
+            return Response({
+                "success": False,
+                "message": f"You need at least 10 completed deliveries before withdrawing. "
+                           f"Current: {wallet.completed_deliveries_since_withdrawal}"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        
+        try:
+            amount = Decimal(request.data.get("amount", 0))
+        except:
+            amount = Decimal(0)
+
+        if amount <= 0 or amount > wallet.balance:
+            return Response({
+                "success": False,
+                "message": "Invalid withdrawal amount."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        
+        transaction = WalletTransaction.objects.create(
+            wallet=wallet,
+            amount=amount,
+            transaction_type="debit",
+            status="pending",  
+            note="Withdrawal request to Nobuk"
+        )
+
+        
+        wallet.balance -= amount
+        wallet.completed_deliveries_since_withdrawal = 0
+        wallet.save()
+
+        # send to Nobuk here
+        # send_withdrawal_request_to_nobuk.delay(transaction.id)
+
+        return Response({
+            "success": True,
+            "message": "Withdrawal request submitted successfully. Awaiting Nobuk confirmation.",
+            "transaction_id": transaction.id,
+            "new_balance": str(wallet.balance)
+        }, status=status.HTTP_201_CREATED)
+        
+
+
+
+
+class RiderWalletTransactionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        rider = request.user
+        wallet = getattr(rider, "wallet", None)
+
+        if not wallet:
+            return Response({
+                "success": False,
+                "message": "Wallet not found."
+            }, status=404)
+
+        transactions = wallet.transactions.all().order_by("-created_at")
+        serializer = WalletTransactionSerializer(transactions, many=True)
+
+        return Response({
+            "success": True,
+            "balance": str(wallet.balance),
+            "transactions": serializer.data
+        })
 
 

@@ -12,6 +12,8 @@ urlpatterns = [
     path("incomplete-shipments/", DriverIncompleteShipmentsView.as_view(), name="incomplete-shipments", ),
     path("completed-shipments/", DriverCompletedShipmentsView.as_view(), name="completed-shipments", ),
     path("shipment/<str:shipment_id>/update-status/", ShipmentUpdateStatusView.as_view(), name="shipment-update-status", ),
+    path("rider-withdraw/", WithdrawalWalletView.as_view(), name="rider-withdraw"),
+    path("rider-transactions/", RiderWalletTransactionsView.as_view(), name="rider-transactions", ),
 ]
 
 

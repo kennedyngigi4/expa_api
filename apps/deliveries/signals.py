@@ -12,18 +12,34 @@ from decimal import Decimal
 
 
 @receiver(post_save, sender=Package)
-def send_intracity_notifications_to_drivers(sender, instance, created, **kwargs):
-    if created and instance.delivery_type == "intra_city":
-        if instance.pickup_date:
-            eta = timezone.make_aware(instance.pickup_date) if timezone.is_naive(instance.pickup_date) else instance.pickup_date
+def send_delivery_notifications_to_drivers(sender, instance, created, **kwargs):
+    if not created:
+        return 
 
-            if eta > timezone.now():
-                send_intracity_notifications.apply_async(
-                    args=(instance.id,), 
-                    eta=eta
-                )
-            else:
-                send_intracity_notifications.delay(instance.id)
+    # for intra_city
+    if instance.delivery_type == "intra_city":
+        _schedule_driver_notification(instance)
+
+    elif instance.delivery_type == "inter_county" and instance.requires_pickup:
+        _schedule_driver_notification(instance)
+
+
+def _schedule_driver_notification(instance):
+    if instance.pickup_date:
+        eta = timezone.make_aware(instance.pickup_date) if timezone.is_naive(instance.pickup_date) else instance.pickup_date
+
+        if eta > timezone.now():
+            send_intracity_notifications.apply_async(
+                args=(instance.id,), 
+                eta=eta
+            )
+        else:
+            send_intracity_notifications.delay(instance.id)
+
+    else:
+        send_intracity_notifications.delay(instance.id)
+
+                
 
 
 @receiver(post_save, sender=Package)
@@ -42,6 +58,8 @@ def create_invoice(sender, instance, created, **kwargs):
         amount=Decimal(round(instance.fees, 3)),
         status=status
     )
+
+    
 
     
 @receiver(post_save, sender=Package)

@@ -168,9 +168,45 @@ def generate_invoice_pdf(request, invoice_id):
 @method_decorator(csrf_exempt, name='dispatch')
 class PaymentCallbackView(APIView):
     def post(self, request, *args, **kwargs):
-        PaymentsLog.objects.create(data=request.data)
 
-        return Response({"status": "ok"})
+        # get fileds
+        payment_date = request.data.get("payment_date")
+        payment_time = request.data.get("payment_time")
+        customer_name = request.data.get("customer_name")
+        phone_number = request.data.get("phone_number")
+        payment_amount = request.data.get("payment_amount")
+        payment_description = request.data.get("payment_description")
+        mpesa_receipt_number = request.data.get("mpesa_receipt_number")
+
+        
+
+
+        try:
+            invoice = Invoice.objects.get(invoice_id=payment_description)
+            invoice.status = "paid"
+            invoice.save()
+
+            # Package update
+            package = invoice.package
+            package.is_paid = True
+            package.save()
+
+            # register the payment
+            Payment.objects.create(
+                invoice_id=payment_description,
+                amount=payment_amount,
+                transaction_code=mpesa_receipt_number,
+                customer_name=customer_name,
+                phone_number=phone_number
+            )
+
+            # payment logs
+            PaymentsLog.objects.create(invoice_id=payment_description, data=request.data)
+
+            return Response({"success": True, "message": "Payment updated."})
+        
+        except  Invoice.DoesNotExist:
+            return Response({"success": False, "message": "Invoice not found."}, status=404)
 
 
         
