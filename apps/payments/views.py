@@ -178,8 +178,6 @@ class PaymentCallbackView(APIView):
         payment_description = request.data.get("payment_description")
         mpesa_receipt_number = request.data.get("mpesa_receipt_number")
 
-        
-
 
         try:
             invoice = Invoice.objects.get(invoice_id=payment_description)
@@ -193,15 +191,16 @@ class PaymentCallbackView(APIView):
 
             # register the payment
             Payment.objects.create(
-                invoice_id=payment_description,
+                invoice_id=invoice,
                 amount=payment_amount,
                 transaction_code=mpesa_receipt_number,
                 customer_name=customer_name,
                 phone_number=phone_number
             )
+            
 
             # payment logs
-            PaymentsLog.objects.create(invoice_id=payment_description, data=request.data)
+            PaymentsLog.objects.create(invoice_id=invoice, data=request.data)
 
             return Response({"success": True, "message": "Payment updated."})
         

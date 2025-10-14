@@ -374,6 +374,8 @@ class RiderWalletTransactionsView(APIView):
         transactions = wallet.transactions.all().order_by("-created_at")
         serializer = WalletTransactionSerializer(transactions, many=True)
 
+        print(serializer.data)
+
         return Response({
             "success": True,
             "balance": str(wallet.balance),

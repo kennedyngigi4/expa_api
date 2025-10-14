@@ -12,6 +12,8 @@ from apps.accounts.models import *
 from apps.accounts.permissions import *
 from apps.deliveries.models import *
 from apps.deliveries.partnershop.serializers import *
+from apps.payments.models import Invoice
+from core.utils.payments import NobukPayments
 
 
 gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
@@ -44,14 +46,22 @@ class PackageUploadView(generics.ListCreateAPIView):
         office = partner_profile.office
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(
+            
+            order = serializer.save(
                 created_by=user,
                 created_by_role=user.role,
                 sender_user=user,
                 origin_office=office,
-                sender_address=office.geo_loc,
-                sender_latLng=f"{office.geo_lat}, {office.geo_lng}"
+                sender_address=partner_profile.location,
+                sender_latLng=partner_profile.location_latLang
             )
+            
+            
+            invoice = Invoice.objects.get(package=order)
+            mpesa_number = request.data["sender_phone"]
+            customer_name = request.data["sender_name"]
+            if invoice:
+                NobukPayments(mpesa_number, customer_name, invoice.invoice_id, str(int(invoice.amount)), "web").STKPush()
             
             return Response({ "success": True, "message" : "Upload successful."}, status=status.HTTP_201_CREATED)
         
