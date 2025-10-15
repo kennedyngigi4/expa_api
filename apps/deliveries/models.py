@@ -202,7 +202,9 @@ class Package(models.Model):
     current_stage = models.PositiveIntegerField(default=1)
     requires_pickup = models.BooleanField(default=False)
     requires_last_mile = models.BooleanField(default=False, help_text="If True, deliver to recipient's door. Else recipient picks from destination office.")
+    
     is_returned = models.BooleanField(default=False)
+    is_received = models.BooleanField(default=False)
     is_paid = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)

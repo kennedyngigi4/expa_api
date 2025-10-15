@@ -89,12 +89,6 @@ class ManagerOriginPackagesView(ListAPIView):
                 shipments__status="in_transit"
             )
 
-        elif category == "incoming":
-            queryset = queryset.filter(
-                destination_office=office,
-                shipments__isnull=False
-            ).exclude(origin_office=office)
-
         elif category == "delivered":
             queryset = queryset.filter(
                 origin_office=office,
@@ -109,10 +103,75 @@ class ManagerOriginPackagesView(ListAPIView):
 
         elif category in ["all", None]:
             queryset = queryset.filter(
-                Q(origin_office=office) | Q(destination_office=office)
+                origin_office=office
             )
 
         return queryset.distinct()
+
+
+
+
+
+class ManagerIncomingPackagesView(ListAPIView):
+    serializer_class = PackageSerializer
+    permission_classes = [IsManager]
+
+    def get_queryset(self):
+        user = self.request.user
+        category = self.request.query_params.get("category")
+        delivery_type = self.request.query_params.get("delivery_type")
+
+        office = getattr(user, "office", None)
+        if not office:
+            return Package.objects.none()
+
+        queryset = Package.objects.all().order_by("-created_at")
+
+        
+        if delivery_type in ["intra_city", "inter_county", "international"]:
+            queryset = queryset.filter(delivery_type=delivery_type)
+
+        
+        if category == "pending":
+            queryset = queryset.filter(
+                destination_office=office,
+                status="pending",
+                shipments__isnull=True
+            )
+
+        elif category == "assigned":
+            queryset = queryset.filter(
+                destination_office=office,
+                status="assigned",
+                shipments__isnull=False
+            )
+
+        elif category == "in_transit":
+            queryset = queryset.filter(
+                destination_office=office,
+                shipments__status="in_transit"
+            )
+
+        elif category == "delivered":
+            queryset = queryset.filter(
+                destination_office=office,
+                status="delivered"
+            )
+
+        elif category == "received":
+            queryset = queryset.filter(
+                destination_office=office,
+                is_received=True
+            )
+
+        elif category in ["all", None]:
+            queryset = queryset.filter(
+                destination_office=office
+            )
+
+        return queryset.distinct()
+
+
 
 
 
