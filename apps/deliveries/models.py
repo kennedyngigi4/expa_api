@@ -142,15 +142,15 @@ def UserPackageImgPath(instance, filename):
 
 
 class PackageStatus(models.TextChoices):
-    PENDING = "pending", "pending"
-    ASSIGNED = "assigned", "assigned"
-    IN_TRANSIT = "in_transit", "in_transit"
-    DELIVERED = "delivered", "delivered"
-    RECEIVED = "received", "received"
-    RETURNED = "returned", "returned"
-    CANCELLED = "cancelled", "cancelled"
-    HANDOVER = "handover", "handover"
-    COMPLETED = "completed", "completed"
+    pending = "pending", "pending"
+    assigned = "assigned", "assigned"
+    in_transit = "in_transit", "in_transit"
+    delivered = "delivered", "delivered"
+    received = "received", "received"
+    returned = "returned", "returned"
+    cancelled = "cancelled", "cancelled"
+    handover = "handover", "handover"
+    completed = "completed", "completed"
 
 
 class Package(models.Model):
@@ -209,7 +209,7 @@ class Package(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='uploaded_packages')
     created_by_role = models.CharField(max_length=30, blank=True, null=True)
     sender_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='sent_packages')
-    status = models.CharField(max_length=30, choices=PackageStatus.choices, default=PackageStatus.PENDING,)
+    status = models.CharField(max_length=30, choices=PackageStatus.choices, default=PackageStatus.pending,)
     payment_phone = models.CharField(max_length=20, null=True, blank=True, verbose_name=_("payment phone"))
     pickup_now = models.BooleanField(default=False)
 
@@ -406,11 +406,7 @@ class ShipmentStage(models.Model):
     driver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, limit_choices_to={'role__in': ['driver', 'partner_rider']})
     from_office = models.ForeignKey(Office, on_delete=models.SET_NULL, null=True, blank=True, related_name='stage_from')
     to_office = models.ForeignKey(Office, on_delete=models.SET_NULL, null=True, blank=True, related_name='stage_to')
-    status = models.CharField(max_length=30, choices=[
-        ("pending", "Pending"),
-        ("in_transit", "In Transit"),
-        ("completed", "Completed"),
-    ], default="pending")
+    status = models.CharField(max_length=30, choices=PackageStatus, default="assigned")
 
     handover_required = models.BooleanField(null=True, blank=True)
     driver_accepted = models.BooleanField(null=True, blank=True)

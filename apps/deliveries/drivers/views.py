@@ -28,7 +28,7 @@ class DriverAssignedShipmentsView(generics.ListAPIView):
         ).distinct().prefetch_related(
             'shipmentpackage_set__package',
             'stages',
-        ).select_related('origin_office', 'destination_office').exclude(status="DELIVERED")
+        ).select_related('origin_office', 'destination_office').exclude(status="delivered")
         
         return data
 
@@ -41,7 +41,7 @@ class DriverCompletedShipmentsView(generics.ListAPIView):
         user = self.request.user
         data = Shipment.objects.filter(
             stages__driver=user,
-            status="DELIVERED"
+            status="delivered"
         ).distinct().prefetch_related(
             'shipmentpackage_set__package',
             'stages',
@@ -104,18 +104,18 @@ class UpdateShipmentStatusView(APIView):
                 package = item.package
                 print(new_status)
                 # update package status
-                if new_status == "IN_TRANSIT":
-                    item.status = PackageStatus.IN_TRANSIT
-                    package.status = PackageStatus.IN_TRANSIT
+                if new_status == "in_transit":
+                    item.status = PackageStatus.in_transit
+                    package.status = PackageStatus.in_transit
 
-                elif new_status == "DELIVERED":
-                    item.status = PackageStatus.DELIVERED
+                elif new_status == "delivered":
+                    item.status = PackageStatus.delivered
                     item.delivered = True
-                    package.status = PackageStatus.DELIVERED
+                    package.status = PackageStatus.delivered
                     
-                elif new_status == "HANDOVER":
-                    item.status = PackageStatus.HANDOVER
-                    package.status = PackageStatus.HANDOVER
+                elif new_status == "handover":
+                    item.status = PackageStatus.handover
+                    package.status = PackageStatus.handover
                 package.save()
                 item.save()
 
