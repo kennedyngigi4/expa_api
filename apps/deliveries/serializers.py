@@ -168,7 +168,8 @@ class ShipmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shipment
         fields = [
-            "shipment_id","shipment_type", "packages", "origin_office", "destination_office", "status", "courier", "requires_handover"
+            "shipment_id","shipment_type", "packages", "origin_office", "destination_office", "status", "courier", "requires_handover", 
+            "pickup_location", "pickup_latLng", "destination_location", "destination_latLng",
         ]
 
 
@@ -279,7 +280,9 @@ class ShipmentReadSerializer(serializers.ModelSerializer):
 
 
     def get_originoffice(self, obj):
-        return obj.origin_office.name
+        if obj.origin_office:
+            return obj.origin_office.name
+        return None
     
     def get_destinationoffice(self, obj):
         if obj.destination_office:

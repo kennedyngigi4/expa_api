@@ -180,6 +180,7 @@ class ManagerIncomingShipmentsView(generics.ListAPIView):
         elif category == "all":
             queryset = queryset
 
+        print(queryset)
         
         return queryset
 

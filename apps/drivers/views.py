@@ -86,6 +86,8 @@ class GetOrderDetailsView(APIView):
     def get(self, request, order_id, *args, **kwargs):
         package = get_object_or_404(Package, id=order_id)
         serializer = DriverOrderDetails(package)
+
+        print(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -129,6 +131,7 @@ class AcceptDeliveryView(APIView):
         
         elif package.delivery_type == "inter_county" and package.requires_pickup:
             shipment = create_inoffice_shipment(package, courier, manager)
+
         else:
             return Response({
                 "success": False,
@@ -205,6 +208,8 @@ class ShipmentDetailsUpdatesView(APIView):
 
         shipment = get_object_or_404(Shipment, id=shipment_id, courier=courier)
         serializer = DriverShipmentSerializer(shipment, context={"request": request})
+
+        print(serializer.data)
         return Response(serializer.data)
 
 

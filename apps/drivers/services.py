@@ -10,7 +10,10 @@ def create_intracity_shipment(package, courier, manager=None):
             courier=courier,
             status="assigned",
             origin_office=package.origin_office, 
-            destination_office=package.destination_office,
+            pickup_location=package.sender_address,
+            pickup_latLng=package.sender_latLng, 
+            destination_location=package.recipient_address,
+            destination_latLng=package.recipient_latLng,
             assigned_at=timezone.now()
         )
 
@@ -49,13 +52,16 @@ def create_intracity_shipment(package, courier, manager=None):
 def create_inoffice_shipment(package, courier, manager=None):
     with transaction.atomic():
         shipment = Shipment.objects.create(
-            shipment_type="in_office",
+            shipment_type="pickup",
             manager=manager,
             courier=courier,
             status="assigned",
-            origin_office=package.origin_office, 
-            destination_office=package.destination_office,
-            assigned_at=timezone.now()
+            pickup_location=package.sender_address,
+            pickup_latLng=package.sender_latLng, 
+            destination_office=package.origin_office,
+            destination_location=package.origin_office.address,
+            destination_latLng=f"{package.origin_office.geo_lat},{package.origin_office.geo_lng}",
+            assigned_at=timezone.now() 
         )
 
 
@@ -65,7 +71,7 @@ def create_inoffice_shipment(package, courier, manager=None):
             package=package,
             status="assigned",
             pickup_address=package.sender_address,
-            delivery_address=package.recipient_address,
+            delivery_address=package.origin_office.address,
             pickup_user=package.created_by
         )
 

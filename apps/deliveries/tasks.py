@@ -24,8 +24,8 @@ def send_intracity_notifications(package_id):
         return "Invalid latlng format"
 
 
-    drivers = get_nearby_drivers(pickup_coords, radius_km=5)
-
+    drivers = get_nearby_drivers(pickup_coords, radius_km=10)
+    
     if drivers:
         intracity_drivers_notification(
             drivers=drivers,

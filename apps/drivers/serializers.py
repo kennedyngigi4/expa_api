@@ -27,6 +27,8 @@ class DriverOrderDetails(serializers.ModelSerializer):
     size_category_name = serializers.SerializerMethodField()
     urgency_name = serializers.SerializerMethodField()
     package_type_name = serializers.SerializerMethodField()
+    origin_office = serializers.SerializerMethodField()
+    destination_office = serializers.SerializerMethodField()
 
     class Meta:
         model = Package
@@ -34,10 +36,15 @@ class DriverOrderDetails(serializers.ModelSerializer):
             "id","slug","name", "package_type", "package_type_name", "size_category", "size_category_name", "delivery_type", "is_fragile", 
             "urgency", "urgency_name","length", "width", "height", "weight", "pickup_date", "description", "sender_name", "sender_phone", 
             "sender_address", "sender_latLng", "is_paid", "recipient_name", "recipient_phone", "recipient_address", "recipient_latLng", 
-            "package_id", "status", "created_by_role", "created_at"
+            "package_id", "status", "created_by_role", "created_at", "origin_office", "destination_office"
         ]
         
 
+    def get_origin_office(self, obj):
+        return obj.origin_office.address
+    
+    def get_destination_office(self, obj):
+        return obj.destination_office.address
 
     def get_size_category_name(self, obj):
         if obj.size_category:
@@ -62,7 +69,8 @@ class DriverShipmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shipment
         fields = [
-            "id", "shipment_id", "status", "assigned_at", "qrcode_svg", "package"
+            "id","shipment_id","shipment_type", "packages", "origin_office", "destination_office", "status", "courier", "requires_handover", 
+            "pickup_location", "pickup_latLng", "destination_location", "destination_latLng", "package", "assigned_at", "qrcode_svg",
         ]
 
     def get_qrcode_svg(self, obj):

@@ -310,7 +310,7 @@ class Shipment(models.Model):
         ( 'delivery', 'Delivery to Recipient', ),
         ( 'pickup', 'Pickup to Office', ),
         ( 'transfer', 'Office to Office Transfer', ),
-        ( 'complete', 'Pickup and Deliver to Recipient'),
+        ( 'intra_city', 'Pickup and Deliver to Recipient'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -331,8 +331,18 @@ class Shipment(models.Model):
     delivered_at = models.DateTimeField(null=True, blank=True)
     confirm_received = models.BooleanField(default=False)
 
+    # Track firstmile
+    pickup_location = models.CharField(max_length=255, null=True, blank=True)
+    pickup_latLng = models.CharField(max_length=255, null=True, blank=True)
+
+    # Track transfer
     origin_office = models.ForeignKey(Office, related_name="shipment_origin", on_delete=models.CASCADE, null=True, blank=True)
     destination_office = models.ForeignKey(Office, related_name="shipment_destination", on_delete=models.CASCADE, null=True, blank=True)
+
+    # Track lastmile
+    destination_location = models.CharField(max_length=255, null=True, blank=True)
+    destination_latLng = models.CharField(max_length=255, null=True, blank=True)
+
 
     qrcode_svg = models.FileField(upload_to=ShipmentQRPath, null=True)
 
