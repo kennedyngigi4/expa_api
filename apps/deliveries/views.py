@@ -108,7 +108,7 @@ class AddOrderView(generics.CreateAPIView):
                    
 
                 # Send creation email
-                # send_order_creation_email(user, order)
+                send_order_creation_email(user, order)
                 send_notification(user, f"Order {order.package_id}", "You order was submitted successfully.")
 
                 return Response({
