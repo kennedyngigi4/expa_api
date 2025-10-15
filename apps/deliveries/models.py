@@ -406,7 +406,7 @@ class ShipmentStage(models.Model):
     driver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, limit_choices_to={'role__in': ['driver', 'partner_rider']})
     from_office = models.ForeignKey(Office, on_delete=models.SET_NULL, null=True, blank=True, related_name='stage_from')
     to_office = models.ForeignKey(Office, on_delete=models.SET_NULL, null=True, blank=True, related_name='stage_to')
-    status = models.CharField(max_length=30, choices=PackageStatus, default="assigned")
+    status = models.CharField(max_length=30, choices=PackageStatus.choices, default="assigned")
 
     handover_required = models.BooleanField(null=True, blank=True)
     driver_accepted = models.BooleanField(null=True, blank=True)
