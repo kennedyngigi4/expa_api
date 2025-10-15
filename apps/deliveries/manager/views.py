@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
+from django.db.models import Q
 
 from apps.accounts.models import *
 from apps.accounts.permissions import *
@@ -46,41 +47,75 @@ class ManagerDashboardStatsView(APIView):
 
 
 
+
+
 class ManagerOriginPackagesView(ListAPIView):
     serializer_class = PackageSerializer
-    permission_classes = [ IsManager ]
+    permission_classes = [IsManager]
 
     def get_queryset(self):
         user = self.request.user
         category = self.request.query_params.get("category")
         delivery_type = self.request.query_params.get("delivery_type")
 
-        if not user.office:
+        office = getattr(user, "office", None)
+        if not office:
             return Package.objects.none()
-        
+
         queryset = Package.objects.all().order_by("-created_at")
 
         
         if delivery_type in ["intra_city", "inter_county", "international"]:
             queryset = queryset.filter(delivery_type=delivery_type)
-        
 
+        
         if category == "pending":
-            queryset = queryset.filter(shipments=None, status="pending", origin_office=user.office)
-        if category == "received":
-            queryset = queryset.filter(status="received", origin_office=user.office)
+            queryset = queryset.filter(
+                origin_office=office,
+                status="pending",
+                shipments__isnull=True
+            )
+
         elif category == "assigned":
-            queryset = queryset.filter(shipments__isnull=False, status="assigned", origin_office=user.office)
-        elif category == "incoming":
-            queryset = queryset.filter(destination_office=user.office, shipments__isnull=False, status="assigned").exclude(origin_office=user.office)
+            queryset = queryset.filter(
+                origin_office=office,
+                status="assigned",
+                shipments__isnull=False
+            )
+
         elif category == "in_transit":
-            queryset = queryset.filter(shipments__status="in_transit", origin_office=user.office)
+            queryset = queryset.filter(
+                origin_office=office,
+                shipments__status="in_transit"
+            )
+
+        elif category == "incoming":
+            queryset = queryset.filter(
+                destination_office=office,
+                shipments__isnull=False
+            ).exclude(origin_office=office)
+
         elif category == "delivered":
-            queryset = queryset.filter(status="delivered", origin_office=user.office)
-        elif category == "all":
-            queryset = queryset
+            queryset = queryset.filter(
+                origin_office=office,
+                status="delivered"
+            )
+
+        elif category == "received":
+            queryset = queryset.filter(
+                destination_office=office,
+                status="received"
+            )
+
+        elif category in ["all", None]:
+            queryset = queryset.filter(
+                Q(origin_office=office) | Q(destination_office=office)
+            )
 
         return queryset.distinct()
+
+
+
 
 
 class ManagerPackageDetailsView(generics.RetrieveUpdateDestroyAPIView):
