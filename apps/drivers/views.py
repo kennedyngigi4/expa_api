@@ -252,15 +252,15 @@ class ShipmentUpdateStatusView(APIView):
                 shipments=shipment
             ).update(status="in_transit")
 
-        elif action == "completed":
-            shipment.status = "completed"
+        elif action == "delivered":
+            shipment.status = "delivered"
 
             shipment.save()
             
             # stages 
             ShipmentStage.objects.filter(
                 shipment=shipment, driver=courier
-            ).update(status="completed")
+            ).update(status="delivered")
 
             # ShipmentPackages
             ShipmentPackage.objects.filter(
