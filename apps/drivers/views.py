@@ -84,6 +84,7 @@ class GetOrderDetailsView(APIView):
     permission_classes = [IsAuthenticated, IsRider]
 
     def get(self, request, order_id, *args, **kwargs):
+        
         package = get_object_or_404(Package, id=order_id)
         serializer = DriverOrderDetails(package)
 
@@ -179,7 +180,7 @@ class DriverCompletedShipmentsView(APIView):
 
         shipments = Shipment.objects.filter(
             courier=driver,
-            status="completed"
+            status="delivered"
         ).order_by("-delivered_at")
 
         serializer = DriverShipmentSerializer(shipments, many=True, context={"request": request})
@@ -192,7 +193,7 @@ class DriverIncompleteShipmentsView(APIView):
         driver = request.user
         shipments = Shipment.objects.filter(
             courier=driver
-        ).exclude(status="completed").order_by("-assigned_at")
+        ).exclude(status="delivered").order_by("-assigned_at")
 
         serializer = DriverShipmentSerializer(shipments, many=True, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -265,12 +266,16 @@ class ShipmentUpdateStatusView(APIView):
             # ShipmentPackages
             ShipmentPackage.objects.filter(
                 shipment=shipment
-            ).update(status="delivered")
+            ).update(
+                status=PackageStatus.in_office if shipment.shipment_type == "pickup"  else "delivered"
+            )
 
             # Packages
             Package.objects.filter(
                 shipments=shipment
-            ).update(status="delivered")
+            ).update(
+                status=PackageStatus.in_office if shipment.shipment_type == "pickup"  else "delivered"
+            )
 
 
             transaction = WalletTransaction.objects.filter(

@@ -35,7 +35,7 @@ class Payment(models.Model):
    
     id = models.UUIDField(primary_key=True, editable=False, unique=True, default=uuid.uuid4)
     invoice_id = models.ForeignKey(Invoice, on_delete=models.SET_NULL, null=True)
-    amount = models.DecimalField(max_digits=12, decimal_places=4, null=True)
+    amount = models.CharField(max_length=28, null=True)
     transaction_code = models.CharField(max_length=255, null=True)
     customer_name = models.CharField(max_length=255, null=True)
     phone_number = models.CharField(max_length=50, null=True, blank=True)
@@ -47,7 +47,7 @@ class Payment(models.Model):
 
 class PaymentsLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
-    invoice_id = models.CharField(max_length=50, null=True)
+    invoice_id = models.ForeignKey(Invoice, on_delete=models.SET_NULL, null=True)
     data = models.JSONField(default=dict, blank=True)
 
     def __str__(self):

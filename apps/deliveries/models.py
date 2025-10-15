@@ -145,6 +145,7 @@ class PackageStatus(models.TextChoices):
     pending = "pending", "pending"
     assigned = "assigned", "assigned"
     in_transit = "in_transit", "in_transit"
+    in_office = "in_office", "in_office"
     delivered = "delivered", "delivered"
     received = "received", "received"
     returned = "returned", "returned"
@@ -429,10 +430,13 @@ class ShipmentStage(models.Model):
 
 class ShipmentPackage(models.Model):
     DELIVERY_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('delivered', 'Delivered'),
+        ('pending', 'pending'),
+        ('assigned', 'assigned'),
+        ('in_transit', 'in_transit'),
+        ('in_office', 'in_office'),
+        ('delivered', 'delivered'),
         ('returned', 'Returned to Office'),
-        ('failed', 'Delivery Failed'),
+        ('cancelled', 'cancelled'),
     ]
 
     shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE)

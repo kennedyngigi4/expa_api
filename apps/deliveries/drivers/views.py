@@ -109,9 +109,9 @@ class UpdateShipmentStatusView(APIView):
                     package.status = PackageStatus.in_transit
 
                 elif new_status == "delivered":
-                    item.status = PackageStatus.delivered
+                    item.status = PackageStatus.in_office if shipment.shipment_type == "pickup" else "delivered"
                     item.delivered = True
-                    package.status = PackageStatus.delivered
+                    package.status = PackageStatus.in_office if shipment.shipment_type == "pickup" else "delivered"
                     
                 elif new_status == "handover":
                     item.status = PackageStatus.handover
