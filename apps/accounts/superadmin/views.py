@@ -32,13 +32,16 @@ class AllUsersView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        role = self.request.query_params.get("role")
+        roles = self.request.query_params.getlist("role")
 
         if user.role != "admin":
             return User.objects.none()
-        
-        queryset = User.objects.filter(Q(role=role)).exclude(Q(role=user.role))
-        
+
+        if roles:
+            queryset = User.objects.filter(role__in=roles).exclude(Q(role=user.role))
+        else:
+            queryset = User.objects.exclude(role=user.role)
+
         return queryset
 
 

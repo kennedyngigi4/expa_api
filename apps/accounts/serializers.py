@@ -12,15 +12,28 @@ class OfficeSerializer(serializers.ModelSerializer):
         ]
 
 
+class DriverLocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DriverLocation
+        fields = '__all__'
+
 
 class UserSerializer(serializers.ModelSerializer):
+    location = DriverLocationSerializer()
+
     class Meta:
         model = User
         fields = [
-            'id', 'full_name', 'email', 'phone', 'is_active', 'last_login', 'role', 'office', 'account_type', 'date_joined'
+            'id', 'full_name', 'email', 'phone', 'is_active', 'last_login', 'role', 'office', 'account_type', 'date_joined', 'location'
         ]
 
 
+    def get_location(self, obj):
+        location = getattr(obj, "driverlocation", None)
+
+        if location:
+            return DriverLocationSerializer(location).data
+        return None
 
 
 class ProfileSerializer(serializers.ModelSerializer):
