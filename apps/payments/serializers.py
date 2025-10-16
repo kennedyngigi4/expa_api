@@ -15,3 +15,14 @@ class InvoiceSerializer(serializers.ModelSerializer):
     def get_package_name(self, obj):
         return obj.package.package_id
 
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = [
+            'id', 'invoice_id', 'amount', 'transaction_code', 'customer_name', 'phone_number', 'date_created'
+        ]
+
+
+
