@@ -104,6 +104,7 @@ class PackageSerializer(serializers.ModelSerializer):
     package_type_name = serializers.SerializerMethodField()
     rider_location = serializers.SerializerMethodField()
     package_proofs = ProofOfDeliverySerializer(many=True, read_only=True)
+    manager_office_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Package
@@ -111,7 +112,8 @@ class PackageSerializer(serializers.ModelSerializer):
             "id","slug","name", "package_type", "package_type_name", "size_category", "size_category_name", "delivery_type", "is_fragile", "urgency", "urgency_name",
             "length", "width", "height", "weight", "pickup_date", "description", "sender_name", "sender_phone", "sender_address", 
             "sender_latLng", "is_paid", "recipient_name", "recipient_phone", "recipient_address", "recipient_latLng", 
-            "package_id", "status", "created_by_role", "created_at", "fees", "rider_location", "payment_method", "package_proofs"
+            "package_id", "status", "created_by_role", "created_at", "fees", "rider_location", "payment_method", 
+            "package_proofs", "current_office", "manager_office_id"
         ]
         read_only_fields = [
             "id", "package_id", "current_handler", "delivery_stage_count", "current_stage"
@@ -165,7 +167,11 @@ class PackageSerializer(serializers.ModelSerializer):
         
         return data
 
-
+    def get_manager_office_id(self, obj):
+        user = self.context["request"].user
+        if user.role == "manager" and hasattr(user, "office"):
+            return str(user.office.id)
+        return None
 
 
 class ShipmentPackageSerializer(serializers.ModelSerializer):

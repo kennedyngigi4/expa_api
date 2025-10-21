@@ -254,6 +254,7 @@ class Package(models.Model):
     origin_office = models.ForeignKey(Office, null=True, blank=True, on_delete=models.SET_NULL, related_name='origin_packages')
     destination_office = models.ForeignKey(Office, null=True, blank=True, on_delete=models.SET_NULL, related_name='destination_packages')
 
+    current_office = models.ForeignKey(Office, null=True, blank=True, on_delete=models.SET_NULL)
     current_handler = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='handling_packages')
     delivery_stage_count = models.PositiveIntegerField(default=1)
     current_stage = models.PositiveIntegerField(default=1)

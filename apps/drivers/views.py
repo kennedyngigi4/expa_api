@@ -227,7 +227,7 @@ class ShipmentUpdateStatusView(APIView):
 
         try:
             shipment = Shipment.objects.get(
-                id=shipment_id, courier=self.request.user
+                id=shipment_id, courier=courier
             )
         
         except Shipment.DoesNotExist:
@@ -236,11 +236,11 @@ class ShipmentUpdateStatusView(APIView):
 
         if action == "in_transit":
             shipment.status = "in_transit"
-            shipment.save()
+            shipment.save(update_fields=["status"])
             
             # stages 
             ShipmentStage.objects.filter(
-                shipment=shipment, driver=courier, status__in=["created", "pending"]
+                shipment=shipment, driver=courier, status__in=["created", "pending", "assigned"]
             ).update(status="in_transit")
 
             # ShipmentPackages
@@ -253,30 +253,48 @@ class ShipmentUpdateStatusView(APIView):
                 shipments=shipment
             ).update(status="in_transit")
 
+        # Delivered
         elif action == "delivered":
             shipment.status = "delivered"
-
-            shipment.save()
+            shipment.delivered_at = timezone.now()
+            shipment.save(update_fields=["status", "delivered_at"])
             
             # stages 
-            ShipmentStage.objects.filter(
-                shipment=shipment, driver=courier
-            ).update(status="delivered")
+            stage = (
+                ShipmentStage.objects.filter(
+                    shipment=shipment, driver=courier
+                ).order_by("-stage_number").first()
+            )
+
+            
+            if stage:
+                stage.status = "delivered"
+                stage.completed_at = timezone.now()
+                stage.save(update_fields=["status", "completed_at"])
+
+                destination_office = stage.to_office
+            else:
+                destination_office = shipment.destination_office
+
+
+            if shipment.shipment_type in ["transfer", "pickup"]:
+                final_status = PackageStatus.in_office
+            else:
+                final_status = PackageStatus.delivered
 
             # ShipmentPackages
             ShipmentPackage.objects.filter(
                 shipment=shipment
             ).update(
-                status=PackageStatus.in_office if shipment.shipment_type == "pickup"  else "delivered"
+                status=final_status
             )
 
             # Packages
-            Package.objects.filter(
-                shipments=shipment
-            ).update(
-                status=PackageStatus.in_office if shipment.shipment_type == "pickup"  else "delivered"
-            )
-
+            packages = Package.objects.filter(shipments=shipment)
+            update_fields = { "status": final_status}
+            if destination_office:
+                update_fields["current_office"] = destination_office
+            packages.update(**update_fields)
 
             transaction = WalletTransaction.objects.filter(
                 wallet=courier.wallet,
@@ -286,13 +304,13 @@ class ShipmentUpdateStatusView(APIView):
 
             if transaction:
                 transaction.status = "completed"
-                transaction.save()
+                transaction.save(update_fields=["status"])
                 courier.wallet.credit(transaction.amount)
 
             # Increment delivery counts
             wallet = courier.wallet
             wallet.completed_deliveries_since_withdrawal += 1
-            wallet.save()
+            wallet.save(update_fields=["completed_deliveries_since_withdrawal"])
 
         else:
             return Response({ "success": False, "message": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
