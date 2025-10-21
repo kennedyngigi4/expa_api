@@ -9,7 +9,7 @@ from datetime import timedelta
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Max, Min
+from django.db.models import Max, Min, Q
 from django.utils.text import slugify
 import qrcode.constants
 from apps.accounts.models import Office, User, DriverLocation, PartnerProfile
@@ -74,6 +74,9 @@ class UrgencyLevel(models.Model):
 
 
 class IntraCityParcelPolicy(models.Model):
+    office = models.OneToOneField(Office, on_delete=models.CASCADE, null=True, related_name="intracity_policy")
+    radius_km = models.PositiveIntegerField(default=35)
+
     max_weight = models.DecimalField(max_digits=10, decimal_places=2, default=15.00)
     max_distance_km = models.PositiveIntegerField(default=35)
     base_km = models.PositiveIntegerField(default=5)
@@ -81,7 +84,7 @@ class IntraCityParcelPolicy(models.Model):
     extra_price_per_km = models.DecimalField(max_digits=10, decimal_places=2, default=35.00)
 
     def __str__(self):
-        return f"Intracity Parcel policy"
+        return f"{self.office.name if self.office else 'Unknown Office'} intracity policy"
     
 
 class IntraCityPackagePricing(models.Model):
@@ -103,10 +106,52 @@ class InterCountyRoute(models.Model):
     base_weight_limit = models.DecimalField(max_digits=10, decimal_places=2, default=10)
     base_price = models.DecimalField(max_digits=12, decimal_places=2)
 
+
+    class Meta:
+        verbose_name = "Inter-County Route"
+        verbose_name_plural = "Inter-County Routes"
+
+
     def __str__(self):
         origins = ", ".join([office.name for office in self.origins.all()])
         destinations = ", ".join([office.name for office in self.destinations.all()])
         return f"{origins} ➝ {destinations} [{self.size_category.name}]"
+    
+
+
+    def clean(self):
+        if not self.pk:
+            pass
+
+
+
+    @classmethod
+    def get_or_create_bidirectional(cls, origin_office, destination_office, size_category):
+        route = cls.objects.filter(
+            size_category=size_category
+        ).filter(
+            Q(origins=origin_office, destinations=destination_office)
+            | Q(origins=destination_office, destinations=origin_office)
+        ).distinct().first()
+
+        if route:
+            return route, False
+        
+
+        # create new route
+        route = cls.objects.create(size_category=size_category)
+        route.origins.add(origin_office)
+        route.destinations.add(destination_office)
+        return route, True
+    
+    def includes_offices(self, origin_office, destination_office):
+        return(
+            self.origins.filter(id=origin_office.id).exists() and
+            self.destinations.filter(id=destination_office.id).exists()
+        ) or (
+            self.origins.filter(id=destination_office.id).exists() and
+            self.destinations.filter(id=origin_office.id).exists()
+        )
     
     
 
@@ -115,6 +160,11 @@ class InterCountyWeightTier(models.Model):
     min_weight = models.DecimalField(max_digits=10, decimal_places=2)
     max_weight = models.DecimalField(max_digits=10, decimal_places=2)
     price_per_kg = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        verbose_name = "Inter-County Weight Tier"
+        verbose_name_plural = "Inter-County Weight Tiers"
+        ordering = ["min_weight"]
     
     def __str__(self):
         return f"{self.min_weight}-{self.max_weight}kg @ {self.price_per_kg}/kg"
@@ -160,6 +210,12 @@ class Package(models.Model):
         ( "intra_city", 'Intra-City', ),
         ( 'inter_county', 'Inter-County', ),
         ( 'international', 'International', ),
+    ]
+
+
+    PAYMENT_METHODS = [
+        ( "mpesa", "mpesa", ),
+        ( "card", "card", ),
     ]
 
 
@@ -215,6 +271,7 @@ class Package(models.Model):
     status = models.CharField(max_length=30, choices=PackageStatus.choices, default=PackageStatus.pending,)
     payment_phone = models.CharField(max_length=20, null=True, blank=True, verbose_name=_("payment phone"))
     pickup_now = models.BooleanField(default=False)
+    payment_method = models.CharField(max_length=50, choices=PAYMENT_METHODS, default="mpesa")
 
     def save(self, *args, **kwargs):
         if not self.package_id:
@@ -279,12 +336,13 @@ class Package(models.Model):
         ]
 
     def __str__(self):
-        return f"Package to {self.recipient_name}"
+        return f"{self.package_id} -  Package to {self.recipient_name}"
 
 
 def packageAttachmentsPath(instance, filename):
     name = instance.package.package_id + filename
     return f"packages/{name}"
+
 
 class PackageAttachment(models.Model):
     package = models.ForeignKey(Package, on_delete=models.CASCADE, related_name="package_attachments")
@@ -399,7 +457,7 @@ class Shipment(models.Model):
 
 
     def __str__(self):
-        return f"Shipment {self.shipment_id}"
+        return f" Shipment {self.shipment_id}"
 
 
 
@@ -491,10 +549,11 @@ class ShipmentTracking(models.Model):
         return f"Tracking shipment of {self.shipment.id}"
 
 
-# shipment proof of delivery
+# shipment/package proof of delivery
 class ProofOfDelivery(models.Model):
-    shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name="proofs")
-    image_pdf = models.FileField(upload_to="shipments/proofs")
+    shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, null=True, blank=True, related_name="proofs")
+    package = models.ForeignKey(Package, on_delete=models.CASCADE, null=True, blank=True, related_name="package_proofs")
+    image_pdf = models.FileField(upload_to="deliveries/proofs")
     uploaded_at = models.DateTimeField(auto_now_add=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
@@ -507,7 +566,10 @@ class ProofOfDelivery(models.Model):
         return "unknown"
 
     def __str__(self):
-        return f"{self.shipment.shipment_id}"
+        if self.shipment:
+            return f"{self.shipment.shipment_id}"
+        elif self.package:
+            return f"{self.package.package_id}"
 
 
 class HandOver(models.Model):

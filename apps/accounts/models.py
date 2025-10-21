@@ -27,6 +27,14 @@ class Office(models.Model):
         help_text="Distance covered under base pickup fee."
     )
 
+    is_intracity_centre = models.BooleanField(
+        default=False,
+        help_text="Mark the office as the central point for intracity deliveries in the region."
+    )
+    intracity_radius_km = models.DecimalField(
+        max_digits=6, decimal_places=2, default=35.00, help_text="Max intracity delivery coverage in km."
+    )
+
     def __str__(self):
         return self.name
 

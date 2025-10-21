@@ -5,10 +5,14 @@ from django.utils import timezone
 from apps.accounts.models import *
 from apps.deliveries.models import *
 from apps.deliveries.tasks import send_intracity_notifications
+from apps.messaging.utils import send_notification
 from apps.payments.models import Invoice
 from apps.messaging.models import Notification
 from apps.messaging.views import *
 from decimal import Decimal
+
+from core.utils.emails import send_order_creation_email
+from core.utils.payments import NobukPayments
 
 
 @receiver(post_save, sender=Package)
@@ -58,6 +62,26 @@ def create_invoice(sender, instance, created, **kwargs):
         amount=Decimal(round(instance.fees, 3)),
         status=status
     )
+
+    invoice_id  = invoice.invoice_id
+    amount = str(int(invoice.amount))
+    if invoice_id and amount:
+        # Initiate STKPush payments 
+        
+        if user.account_type == "personal":
+            if instance.payment_method == "mpesa":
+                mpesa_number = instance.payment_phone
+                sender_name = str(user.full_name)
+                
+                NobukPayments(mpesa_number, sender_name, invoice_id, amount, "web").STKPush()
+                
+            elif instance.payment_method == "card":
+                print("Card ")
+        
+
+    # Send creation email
+    send_order_creation_email(user, instance)
+    send_notification(user, f"Order {instance.package_id}", "You order was submitted successfully.")
 
     
 

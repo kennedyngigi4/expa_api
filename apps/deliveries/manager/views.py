@@ -151,6 +151,12 @@ class ManagerIncomingPackagesView(ListAPIView):
                 destination_office=office,
                 shipments__status="in_transit"
             )
+        
+        elif category == "in_office":
+            queryset = queryset.filter(
+                destination_office=office,
+                status="in_office"
+            )
 
         elif category == "delivered":
             queryset = queryset.filter(
@@ -158,11 +164,7 @@ class ManagerIncomingPackagesView(ListAPIView):
                 status="delivered"
             )
 
-        elif category == "received":
-            queryset = queryset.filter(
-                destination_office=office,
-                is_received=True
-            )
+        
 
         elif category in ["all", None]:
             queryset = queryset.filter(

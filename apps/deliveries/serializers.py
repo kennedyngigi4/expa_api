@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.accounts.models import *
-from apps.deliveries.models import VehicleType, VehiclePricing, PackageType, Package, Shipment, SizeCategory, InterCountyRoute, ShipmentPackage, ShipmentTracking, HandOver, UrgencyLevel, ShipmentStage
+from apps.deliveries.models import VehicleType, VehiclePricing, PackageType, Package, Shipment, SizeCategory, InterCountyRoute, ShipmentPackage, ShipmentTracking, HandOver, UrgencyLevel, ShipmentStage, ProofOfDelivery
 from apps.messaging.models import Notification
 
 
@@ -62,6 +62,24 @@ class InterCountyRouteSerializer(serializers.ModelSerializer):
         destinations = ", ".join([office.name for office in obj.destinations.all()])
         return destinations
 
+
+
+class ProofOfDeliverySerializer(serializers.ModelSerializer):
+    file_type = serializers.ReadOnlyField()
+    file_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProofOfDelivery
+        fields = [
+            "id", "shipment", "package", "image_pdf", "file_url", "file_type", "uploaded_at", "uploaded_by"
+        ]
+        read_only_fields = ["id", "uploaded_at", "uploaded_by", "file_type"]
+
+    def get_file_url(self, obj):
+        request = self.context.get("request")
+        if obj.image_pdf and hasattr(obj.image_pdf, "url"):
+            return request.build_absolute_uri(obj.image_pdf.url)
+        return None
     
 
 
@@ -72,7 +90,7 @@ class PackageWriteSerializer(serializers.ModelSerializer):
             "slug","name", "package_type", "size_category", "delivery_type", "is_fragile", "urgency",
             "length", "width", "height", "weight", "pickup_date", "description", "sender_name", "sender_phone", "sender_address", 
             "sender_latLng", "is_paid", "recipient_name", "recipient_phone", "recipient_address", "recipient_latLng", 
-            "package_id", "status", "requires_last_mile", "requires_pickup", "fees", "payment_phone", "pickup_now"
+            "package_id", "status", "requires_last_mile", "requires_pickup", "fees", "payment_phone", "pickup_now", "payment_method"
         ]
         read_only_fields = [
             "id", "package_id", "current_handler", "delivery_stage_count", "current_stage", "cardholder_name", "card_number", "card_expiry", "card_cvc", "payment_method"
@@ -85,6 +103,7 @@ class PackageSerializer(serializers.ModelSerializer):
     urgency_name = serializers.SerializerMethodField()
     package_type_name = serializers.SerializerMethodField()
     rider_location = serializers.SerializerMethodField()
+    package_proofs = ProofOfDeliverySerializer(many=True, read_only=True)
 
     class Meta:
         model = Package
@@ -92,7 +111,7 @@ class PackageSerializer(serializers.ModelSerializer):
             "id","slug","name", "package_type", "package_type_name", "size_category", "size_category_name", "delivery_type", "is_fragile", "urgency", "urgency_name",
             "length", "width", "height", "weight", "pickup_date", "description", "sender_name", "sender_phone", "sender_address", 
             "sender_latLng", "is_paid", "recipient_name", "recipient_phone", "recipient_address", "recipient_latLng", 
-            "package_id", "status", "created_by_role", "created_at", "fees", "rider_location"
+            "package_id", "status", "created_by_role", "created_at", "fees", "rider_location", "payment_method", "package_proofs"
         ]
         read_only_fields = [
             "id", "package_id", "current_handler", "delivery_stage_count", "current_stage"

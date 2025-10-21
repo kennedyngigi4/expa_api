@@ -16,16 +16,17 @@ from apps.messaging.firebase import *
 
 
 
-class ClientNotificationsView(generics.ListAPIView):
+class NotificationsView(generics.ListAPIView):
     serializer_class = NotificationSerializer
     queryset = Notification.objects.all().order_by("-created_at")
-    permission_classes = [ IsAuthenticated, IsClient ]
+    permission_classes = [ IsAuthenticated ]
 
     def get_queryset(self):
         user = self.request.user
         queryset = self.queryset.filter(user=user)
         return queryset
     
+
 
 def intracity_drivers_notification(drivers, title, body, data=None):
     init_firebase()
@@ -40,6 +41,7 @@ def intracity_drivers_notification(drivers, title, body, data=None):
         print("No tokens found.")
         return
 
+
     message = messaging.MulticastMessage(
         notification=messaging.Notification(
             title=title,
@@ -49,10 +51,10 @@ def intracity_drivers_notification(drivers, title, body, data=None):
         data={str(k): str(v) for k, v in (data or {}).items()},
     )
 
-    # ✅ new API in firebase-admin >= 6.x
+    
     response = messaging.send_each_for_multicast(message)
 
-    print("Sent:", response.success_count, "Failed:", response.failure_count)
+    
     for idx, resp in enumerate(response.responses):
         if not resp.success:
             print(f"❌ Error for token {tokens[idx]}: {resp.exception}")

@@ -106,7 +106,7 @@ class ProofOfDeliverySerializer(serializers.ModelSerializer):
     class Meta:
         model = ProofOfDelivery
         fields = [
-            "id", "shipment", "image_pdf", "file_url", "file_type", "uploaded_at", "uploaded_by"
+            "id", "shipment", "package", "image_pdf", "file_url", "file_type", "uploaded_at", "uploaded_by"
         ]
         read_only_fields = ["id", "uploaded_at", "uploaded_by", "file_type"]
 

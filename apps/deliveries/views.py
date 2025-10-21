@@ -92,24 +92,21 @@ class AddOrderView(generics.CreateAPIView):
                     sender_user=user,
                 )
 
-                
-
-                payable_amount = request.data["fees"]
-                mpesa_number = request.data["payment_phone"]
-                
-                invoice = Invoice.objects.get(package=order)
-                if invoice:
-                    # Initiate STKPush payments 
-                    if user.account_type == "personal": 
-                        if request.data["payment_method"] == "mpesa":
-                            NobukPayments(mpesa_number, user.full_name, invoice.invoice_id, payable_amount, "web").STKPush()
-                        elif request.data["payment_method"] == "card":
-                            print("Card ", request.data["cardholder_name"])
+                # payable_amount = request.data["fees"]
+                # mpesa_number = request.data["payment_phone"]
+                # invoice = Invoice.objects.get(package=order)
+                # if invoice:
+                #     # Initiate STKPush payments 
+                #     if user.account_type == "personal": 
+                #         if request.data["payment_method"] == "mpesa":
+                #             NobukPayments(mpesa_number, user.full_name, invoice.invoice_id, payable_amount, "web").STKPush()
+                #         elif request.data["payment_method"] == "card":
+                #             print("Card ", request.data["cardholder_name"])
                    
 
-                # Send creation email
-                send_order_creation_email(user, order)
-                send_notification(user, f"Order {order.package_id}", "You order was submitted successfully.")
+                # # Send creation email
+                # send_order_creation_email(user, order)
+                # send_notification(user, f"Order {order.package_id}", "You order was submitted successfully.")
 
                 return Response({
                     "success": True,
@@ -202,10 +199,16 @@ class CustomerPackageRetrieveEditDeleteView(generics.RetrieveUpdateDestroyAPIVie
 
 
 def get_road_distance_km(origin, destination):
-    result = gmaps.distance_matrix(origins=[origin], destinations=[destination], mode="driving")
+   
     try:
-        distance_meters = result['rows'][0]['elements'][0]['distance']['value']  # meters
-        return round(Decimal(distance_meters) / 1000, 2)  # km
+        result = gmaps.distance_matrix(origins=[origin], destinations=[destination], mode="driving", units="metric")
+        element = result['rows'][0]['elements'][0]
+
+        if element.get('status') != 'OK':
+            return None
+        
+        distance_meters = element['distance']['value']
+        return round(Decimal(distance_meters) / 1000, 2)
     except Exception:
         return None
 
@@ -220,37 +223,81 @@ def calculate_chargeable_weight(actual_weight_kg, length_cm, width_cm, height_cm
     return max(actual_weight_kg, volumetric_weight)
 
 
+def is_within_region(lat, lng, center_lat, center_lng, radius_km):
+    origin = f"{center_lat},{center_lng}"
+    destination = f"{lat},{lng}"
+
+    try:
+        result = gmaps.distance_matrix(origins=[origin], destinations=[destination], mode="driving", units="metric")
+        element = result['rows'][0]['elements'][0] 
+
+        if element.get('status') != 'OK':
+            return False
+        
+        distance_meters = element['distance']['value']
+        distance_km = Decimal(distance_meters) / 1000
+
+        return distance_km <= Decimal(radius_km)
+    except Exception as e:
+        return False
+
+
 class IntraCityPriceCalculationView(APIView):
     def post(self, request):
         data = request.data
 
         try:
-            size_category = data.get("size_category")
-            size_category = SizeCategory.objects.get(id=size_category)
+            size_category = SizeCategory.objects.get(id=data.get("size_category"))
             weight = Decimal(data.get("weight", 0))
             length = Decimal(data.get("length", 0))
             width = Decimal(data.get("width", 0))
             height = Decimal(data.get("height", 0))
+
             sender_latLng = data.get("sender_latLng")
             recipient_latLng = data.get("recipient_latLng")
+            if not sender_latLng or not recipient_latLng:
+                return Response({"success": False, "message": "Sender and recipient locations are required."})
 
             sender_coords = tuple(round(float(coord), 5) for coord in sender_latLng.split(","))
             recipient_coords = tuple(round(float(coord), 5) for coord in recipient_latLng.split(","))
 
             distance_km = get_road_distance_km(sender_coords, recipient_coords)
-
             if distance_km is None:
                 return Response({ "success": False, "message": "Failed to calculate road distance." }, status=500)
 
 
-            if size_category.name.lower() == "parcel":
-                policy = IntraCityParcelPolicy.objects.first()
+            # Policy check
+            valid_policy = None
+            for policy in IntraCityParcelPolicy.objects.select_related("office"):
+                office = policy.office
+                if not (office.geo_lat and office.geo_lng):
+                    continue
+
+
+                lat_c, lng_c = float(office.geo_lat), float(office.geo_lng)
                 
+                sender_in_radius = is_within_region(sender_coords[0], sender_coords[1], lat_c, lng_c, policy.radius_km)
+                recipient_in_radius = is_within_region(recipient_coords[0], recipient_coords[1], lat_c, lng_c, policy.radius_km)
+
+                if sender_in_radius or recipient_in_radius:
+                    valid_policy = policy
+                    break
+            
+            if not valid_policy:
+                return Response({
+                    "success": False,
+                    "message": "Pickup and dropoff must be within the same city/office zone for intracity delivery. Try intercounty instead."
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            policy = valid_policy
+            
+            # Pricing logic
+            if size_category.name.lower() == "parcel":
                 if weight > policy.max_weight:
                     return Response({ "success": False, "message": "Parcel exceeds max weight." }, status=400)
                 
                 if distance_km > policy.max_distance_km:
-                    return Response({ "success": False, "message": "Distance exceeds max range for parcel delivery." }, status=400)
+                    return Response({ "success": False, "message": "Distance exceeds max intracity coverage." }, status=400)
 
                 if distance_km <= policy.base_km:
                     price = policy.base_price
@@ -259,8 +306,6 @@ class IntraCityPriceCalculationView(APIView):
                     extra_km = distance_km - Decimal(policy.base_km)
                     price = policy.base_price + (extra_km * policy.extra_price_per_km)
 
-                
-                
 
             elif size_category.name.lower() == "package":
                 chargeable_weight = calculate_chargeable_weight(weight, length, width, height)
@@ -272,12 +317,14 @@ class IntraCityPriceCalculationView(APIView):
                 ).first()
 
                 if not pricing:
-                    return Response({ "error": "No pricing rule for this weight bracket." }, status=400)
+                    return Response({ "success": False, "message": "No pricing rule for this weight bracket." }, status=400)
 
-                if distance_km <= 5:
+                base_km = policy.base_km
+                if distance_km <= base_km:
                     price = pricing.base_price
+
                 else:
-                    extra_km = distance_km - Decimal(5)
+                    extra_km = distance_km - Decimal(base_km)
                     price = pricing.base_price + (extra_km * pricing.extra_km_price)
 
             else:
@@ -331,11 +378,13 @@ class InterCountyPriceCalculator(APIView):
             chargeable_weight = calculate_chargeable_weight(weight, length, width, height)
 
             # Match route
-            route = InterCountyRoute.objects.filter(
-                origins=origin_office,
-                destinations=destination_office,
-                size_category_id=size_category_id
-            ).first()
+            size_category = SizeCategory.objects.get(id=size_category_id)
+            route, created = InterCountyRoute.get_or_create_bidirectional(
+                origin_office=origin_office,
+                destination_office=destination_office,
+                size_category=size_category
+            )
+
 
             if not route:
                 return Response({
