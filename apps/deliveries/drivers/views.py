@@ -102,28 +102,40 @@ class UpdateShipmentStatusView(APIView):
 
             for item in shipment_packages:
                 package = item.package
-                print(new_status)
-                # update package status
+
+                # === STATUS HANDLING ===
                 if new_status == "in_transit":
                     item.status = PackageStatus.in_transit
                     package.status = PackageStatus.in_transit
 
                 elif new_status == "delivered":
-                    item.status = PackageStatus.in_office if shipment.shipment_type == "pickup" else "delivered"
-                    item.delivered = True
-                    package.status = PackageStatus.in_office if shipment.shipment_type == "pickup" else "delivered"
                     
+                    if shipment.shipment_type in ["pickup", "transfer"]:
+                        item.status = PackageStatus.in_office
+                        package.status = PackageStatus.in_office
+
+                        
+                        if shipment.destination_office:
+                            package.current_office = shipment.destination_office
+                    else:
+                       
+                        item.status = PackageStatus.delivered
+                        package.status = PackageStatus.delivered
+
+                    item.delivered = True
+
                 elif new_status == "handover":
                     item.status = PackageStatus.handover
                     package.status = PackageStatus.handover
+
                 package.save()
                 item.save()
 
 
                 # send notification to sender & recipient
-                sender = item.package.created_by
+                sender = package.created_by
                 if sender:
-                    sender_notification = send_notification(
+                    send_notification(
                         user=sender,
                         title=f"Package {item.package.package_id} update",
                         message=f"Your package is now {item.status}.",

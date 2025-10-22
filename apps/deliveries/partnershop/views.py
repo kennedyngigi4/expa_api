@@ -33,7 +33,7 @@ class PackageUploadView(generics.ListCreateAPIView):
     
     def post(self, request, *args, **kwargs):
         user = self.request.user
-
+        print(request.data)
         try:
             partner_profile = user.partner_profile
         except PartnerProfile.DoesNotExist:
