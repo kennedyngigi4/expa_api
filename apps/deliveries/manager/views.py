@@ -34,7 +34,7 @@ class ManagerDashboardStatsView(APIView):
         shipments_out = shipments.filter(origin_office=office).count()
         shipments_in = shipments.filter(destination_office=office).count()
         outgoing_shipments = Shipment.objects.filter(manager=user, origin_office=office).order_by("-assigned_at")
-        recent_shipments = ShipmentReadSerializer(outgoing_shipments, many=True).data
+        recent_shipments = ShipmentReadSerializer(outgoing_shipments, many=True, context={"request": request}).data
 
         return Response({
             "orders": orders,
@@ -187,21 +187,39 @@ class ManagerCreateShipmentView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, IsManager]
     queryset = Shipment.objects.all()
 
+    def perform_create(self, serializer):
+        user = self.request.user
+        office = getattr(user, "office", None)
+        if not office:
+            raise ValidationError({"office": "Manager is not linked to any office."})
+
+        shipment_type = serializer.validated_data.get("shipment_type")
+
+        # ✅ Only set the manager and office here
+        if shipment_type == "pickup":
+            serializer.save(
+                manager=user,
+                destination_office=office,  # destination office auto set for pickup
+            )
+        else:
+            serializer.save(manager=user)
 
     def post(self, request, *args, **kwargs):
+        print("Creating shipment .................")
         print(request.data)
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
-
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         except ValidationError as ve:
-            return Response({"success": False, "errors": ve.detail}, status=status.HTTP_400_BAD_REQUEST)
+            print("VALIDATION ERRORS:", ve.detail)
+            return Response({"success": False, "errors": ve.detail}, status=400)
 
         except Exception as e:
-            return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            print("ERROR CREATING SHIPMENT:", str(e))
+            return Response({"success": False, "message": str(e)}, status=500)
 
 
 

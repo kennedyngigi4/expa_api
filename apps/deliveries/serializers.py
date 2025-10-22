@@ -1,3 +1,4 @@
+from django.forms import ValidationError
 from rest_framework import serializers
 
 from apps.accounts.models import *
@@ -200,28 +201,30 @@ class ShipmentSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         request = self.context["request"]
-        manager = request.user
+        
+        # Use manager from validated_data if provided (by view), otherwise default
+        manager = validated_data.pop("manager", getattr(request.user, "id", None))
+        if manager is None:
+            raise ValidationError("Manager must be set either in view or request context.")
+
         packages_data = validated_data.pop("packages", [])
 
-        if not validated_data.get("origin_office") and hasattr(manager, 'office'):
-            validated_data["origin_office"] = manager.office
+        # Set origin_office if missing
+        if not validated_data.get("origin_office") and hasattr(request.user, "office"):
+            validated_data["origin_office"] = request.user.office
 
         shipment = Shipment.objects.create(manager=manager, **validated_data)
 
+        # Link packages
         for package_id in packages_data:
             try:
                 package = Package.objects.get(id=package_id)
                 ShipmentPackage.objects.create(shipment=shipment, package=package)
-
-                # Update package status (e.g. to "assigned")
                 package.status = "assigned"
                 package.save()
-
-                # Optional: Send notification
                 self.send_package_notification(package)
             except Package.DoesNotExist:
                 continue
-
 
         # Initial ShipmentStage
         ShipmentStage.objects.create(
@@ -231,7 +234,6 @@ class ShipmentSerializer(serializers.ModelSerializer):
             status="created",
             handover_required=shipment.requires_handover
         )
-
 
         return shipment
     
