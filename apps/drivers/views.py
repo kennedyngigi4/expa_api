@@ -290,10 +290,11 @@ class ShipmentUpdateStatusView(APIView):
             )
 
             # Packages
-            packages = Package.objects.filter(shipments=shipment)
             update_fields = { "status": final_status}
-            if destination_office:
-                update_fields["current_office"] = destination_office
+            if shipment.destination_office:
+                update_fields["current_office"] = shipment.destination_office
+
+            packages = Package.objects.filter(shipments=shipment)
             packages.update(**update_fields)
 
             transaction = WalletTransaction.objects.filter(

@@ -301,7 +301,7 @@ class ShipmentReadSerializer(serializers.ModelSerializer):
 
     def get_packages(self, obj):
         shipment_packages = ShipmentPackage.objects.filter(shipment=obj)
-        return ShipmentPackageSerializer(shipment_packages, many=True).data
+        return ShipmentPackageSerializer(shipment_packages, many=True, context=self.context).data
 
 
     def get_originoffice(self, obj):

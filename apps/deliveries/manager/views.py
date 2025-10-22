@@ -175,10 +175,6 @@ class ManagerIncomingPackagesView(ListAPIView):
 
 
 
-
-
-
-
 class ManagerPackageDetailsView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PackageSerializer
     queryset = Package.objects.all()
@@ -205,9 +201,6 @@ class ManagerCreateShipmentView(generics.ListCreateAPIView):
             return Response({"success": False, "errors": ve.detail}, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
-            print("🚨 Unexpected Error:", str(e))
-            print("Incoming Data:", request.data)
-
             return Response({"success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
