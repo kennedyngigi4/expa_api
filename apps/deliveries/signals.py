@@ -74,13 +74,13 @@ def create_invoice(sender, instance, created, **kwargs):
                 sender_name = str(user.full_name)
                 
                 NobukPayments(mpesa_number, sender_name, invoice_id, amount, "web").STKPush()
-                
+                send_order_creation_email(user, instance)
             elif instance.payment_method == "card":
                 print("Card ")
         
 
     # Send creation email
-    send_order_creation_email(user, instance)
+    
     send_notification(user, f"Order {instance.package_id}", "You order was submitted successfully.")
 
     
