@@ -26,3 +26,18 @@ def send_order_creation_email(user, order):
     send_mail(subject, plain_message, from_email, to, html_message=html_message)
 
 
+
+
+def send_order_creation_email_admin(user, order):
+    subject = f"Order #{order.package_id} Created Successfully"
+    html_message = render_to_string("deliveries/admin_package_creation_email.html", {"user": user, "order": order})
+    plain_message = strip_tags(html_message)
+    from_email = None
+    to = ['app.orders@expa.co.ke']
+
+
+    send_mail(subject, plain_message, from_email, to, html_message=html_message)
+
+
+
+

@@ -204,6 +204,9 @@ class PackageStatus(models.TextChoices):
     completed = "completed", "completed"
 
 
+def PackageQRPath(instance, filename):
+    return f"packages/qr_codes/{filename}"
+
 class Package(models.Model):
 
     DELIVERY_TYPES = [
@@ -260,10 +263,12 @@ class Package(models.Model):
     current_stage = models.PositiveIntegerField(default=1)
     requires_pickup = models.BooleanField(default=False)
     requires_last_mile = models.BooleanField(default=False, help_text="If True, deliver to recipient's door. Else recipient picks from destination office.")
-    
+    requires_packaging = models.BooleanField(default=False)
+
     is_returned = models.BooleanField(default=False)
     is_received = models.BooleanField(default=False)
     is_paid = models.BooleanField(default=False)
+    qrcode_svg = models.FileField(upload_to=PackageQRPath, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='uploaded_packages')
@@ -277,7 +282,7 @@ class Package(models.Model):
     def save(self, *args, **kwargs):
         if not self.package_id:
             while True:
-                new_id = generateID("EX")
+                new_id = generateID("AWB")
                 if not Package.objects.filter(package_id=new_id).exists():
                     self.package_id = new_id
                     break
@@ -305,6 +310,9 @@ class Package(models.Model):
                 self.destination_office = self.get_nearest_office(lat, lng)
             except Exception as e:
                 print(f"Error parsing recipient coordinates: {e}")
+
+        if not self.qrcode_svg:
+            self.generateQRCode()
 
         super().save(*args, **kwargs)
 
@@ -336,6 +344,35 @@ class Package(models.Model):
             models.Index(fields=['status']),
         ]
 
+
+    def generateQRCode(self):
+        confirm_url = f"https://app.expa.co.ke/confirm/order/{self.package_id}"
+
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4
+        )
+
+        qr.add_data(confirm_url)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        # construct filepath
+        file_name = f"{self.package_id}.png"
+        file_path = os.path.join(settings.MEDIA_ROOT, "packages/qr_codes", file_name)
+
+        # ensure qrcodes directory exists
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        img.save(file_path)
+
+        # save relative path
+        self.qrcode_svg.name = f"packages/qr_codes/{file_name}"
+        
+    
+
     def __str__(self):
         return f"{self.package_id} -  Package to {self.recipient_name}"
 
@@ -355,12 +392,14 @@ class PackageAttachment(models.Model):
 
 class PackageItem(models.Model):
     package = models.ForeignKey(Package, on_delete=models.CASCADE, related_name="package_items")
-    name = models.CharField(max_length=255)
+    destination = models.CharField(max_length=255)
+    destination_latLng = models.CharField(max_length=100, null=True) 
     weight = models.CharField(max_length=20, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
+    price = models.CharField(max_length=40, null=True)
 
     def __str__(self):
-        return f"Item: {self.name} of {self.package.name}"
+        return f"Item: {self.package.name} to {self.destination}"
 
 
 def ShipmentQRPath(instance, filename):
@@ -412,7 +451,7 @@ class Shipment(models.Model):
     def save(self, *args, **kwargs):
         if not self.shipment_id:
             while True:
-                new_id = generateID("SH")
+                new_id = generateID("MF")
                 if not Shipment.objects.filter(shipment_id=new_id).exists():
                     self.shipment_id = new_id
                     break
@@ -431,6 +470,8 @@ class Shipment(models.Model):
 
     
     def generateQRCode(self):
+        confirm_url = f"https://app.expa.co.ke/confirm/shipment/{self.shipment_id}"
+
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -438,10 +479,10 @@ class Shipment(models.Model):
             border=4
         )
 
-        qr.add_data(self.shipment_id)
+        qr.add_data(confirm_url)
         qr.make(fit=True)
 
-        img = qr.make_image(fill_color="black", back="white")
+        img = qr.make_image(fill_color="black", back_color="white")
 
         # construct filepath
         file_name = f"{self.shipment_id}.png"
@@ -449,13 +490,11 @@ class Shipment(models.Model):
 
         # ensure qrcodes directory exists
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-
-        # SVG File
         img.save(file_path)
 
         # save relative path
         self.qrcode_svg.name = f"shipments/qr_codes/{file_name}"
-
+        self.save()
 
     def __str__(self):
         return f" Shipment {self.shipment_id}"

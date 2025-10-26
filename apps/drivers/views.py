@@ -140,6 +140,7 @@ class AcceptDeliveryView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         package.status = "assigned"
+        package.current_handler=courier
         package.save()
 
         # ShipmentPackage update
@@ -153,7 +154,7 @@ class AcceptDeliveryView(APIView):
         shipment.status = "assigned"
         shipment.save()
 
-        commission_rate = Decimal("0.20")
+        commission_rate = Decimal("0.15")
         driver_earnings = package.fees * commission_rate
         rider_wallet, _ = Wallet.objects.get_or_create(user=courier)
 
@@ -171,6 +172,8 @@ class AcceptDeliveryView(APIView):
             "message": "Shipment created successfully.",
             "shipment_id": shipment.id
         }, status=status.HTTP_201_CREATED)
+
+
 
 
 class DriverCompletedShipmentsView(APIView):

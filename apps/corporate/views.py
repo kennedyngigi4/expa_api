@@ -68,10 +68,13 @@ class CalculatePriceView(APIView):
             return Response({ "success": False, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+
+
+
+
 class CreateOrderView(APIView):
     def post(self, request):
         user = self.request.user
-        print(request.data)
         serializer = CorpPackageWriteSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         package = serializer.save(created_by=user, created_by_role=user.role, sender_user=user)

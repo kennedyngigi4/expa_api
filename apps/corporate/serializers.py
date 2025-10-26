@@ -11,7 +11,7 @@ class PackageItemsSerializer(serializers.ModelSerializer):
     class Meta:
         model = PackageItem
         fields = [
-            "name", "weight", "description"
+            "destination", "destination_latLng", "weight", "description", "price"
         ]
 
 
@@ -32,7 +32,7 @@ class CorpPackageWriteSerializer(serializers.ModelSerializer):
             "name", "package_type", "size_category", "delivery_type", "is_fragile", "urgency", "weight", "pickup_date", 
             "description", "sender_name", "sender_phone", "sender_address", "sender_latLng", "is_paid", "recipient_name",
             "recipient_phone", "recipient_address", "recipient_latLng", "package_id", "status", "requires_last_mile", 
-            "requires_pickup", "fees", "vehicle_type", "package_items"
+            "requires_pickup", "fees", "vehicle_type", "package_items", "requires_packaging"
         ]
         extra_kwargs = {
             "sender_name": {"required": False},
@@ -60,7 +60,7 @@ class CorpPackageWriteSerializer(serializers.ModelSerializer):
 
         for item_data in items_data:
             obj = PackageItem.objects.create(package=package, **item_data)
-            print("CREATED ITEM >>>", obj.id, obj.name)
+            print("CREATED ITEM >>>", obj.id)
 
         return package
 
@@ -77,7 +77,7 @@ class CorpPackageReadSerializer(serializers.ModelSerializer):
             "slug","name", "package_type", "package_type_name", "size_category", "delivery_type", "is_fragile", "urgency", "urgency_name", "weight", "pickup_date", 
             "description", "sender_name", "sender_phone", "sender_address", "sender_latLng", "is_paid", "recipient_name",
             "recipient_phone", "recipient_address", "recipient_latLng", "package_id", "status", "requires_last_mile", 
-            "requires_pickup", "fees", "vehicle_type", "package_items", "package_attachments"
+            "requires_pickup", "fees", "vehicle_type", "package_items", "package_attachments", "requires_packaging"
         ]
         
     def get_urgency_name(self, obj):

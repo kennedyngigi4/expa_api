@@ -90,12 +90,13 @@ class PackageWriteSerializer(serializers.ModelSerializer):
         fields = [
             "slug","name", "package_type", "size_category", "delivery_type", "is_fragile", "urgency",
             "length", "width", "height", "weight", "pickup_date", "description", "sender_name", "sender_phone", "sender_address", 
-            "sender_latLng", "is_paid", "recipient_name", "recipient_phone", "recipient_address", "recipient_latLng", 
+            "sender_latLng", "is_paid", "recipient_name", "recipient_phone", "recipient_address", "recipient_latLng", "requires_packaging",
             "package_id", "status", "requires_last_mile", "requires_pickup", "fees", "payment_phone", "pickup_now", "payment_method"
         ]
         read_only_fields = [
             "id", "package_id", "current_handler", "delivery_stage_count", "current_stage", "cardholder_name", "card_number", "card_expiry", "card_cvc", "payment_method"
         ]
+
 
 
 
@@ -112,7 +113,7 @@ class PackageSerializer(serializers.ModelSerializer):
         fields = [
             "id","slug","name", "package_type", "package_type_name", "size_category", "size_category_name", "delivery_type", "is_fragile", "urgency", "urgency_name",
             "length", "width", "height", "weight", "pickup_date", "description", "sender_name", "sender_phone", "sender_address", 
-            "sender_latLng", "is_paid", "recipient_name", "recipient_phone", "recipient_address", "recipient_latLng", 
+            "sender_latLng", "is_paid", "recipient_name", "recipient_phone", "recipient_address", "recipient_latLng", "requires_packaging",
             "package_id", "status", "created_by_role", "created_at", "fees", "rider_location", "payment_method", 
             "package_proofs", "current_office", "manager_office_id"
         ]

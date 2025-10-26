@@ -11,7 +11,7 @@ from apps.messaging.models import Notification
 from apps.messaging.views import *
 from decimal import Decimal
 
-from core.utils.emails import send_order_creation_email
+from core.utils.emails import send_order_creation_email, send_order_creation_email_admin
 from core.utils.payments import NobukPayments
 
 
@@ -74,13 +74,13 @@ def create_invoice(sender, instance, created, **kwargs):
                 sender_name = str(user.full_name)
                 
                 NobukPayments(mpesa_number, sender_name, invoice_id, amount, "web").STKPush()
+                
+                # Send creation email
                 send_order_creation_email(user, instance)
+                send_order_creation_email_admin(user, instance)
             elif instance.payment_method == "card":
                 print("Card ")
         
-
-    # Send creation email
-    
     send_notification(user, f"Order {instance.package_id}", "You order was submitted successfully.")
 
     
