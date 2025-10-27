@@ -494,7 +494,7 @@ class Shipment(models.Model):
 
         # save relative path
         self.qrcode_svg.name = f"shipments/qr_codes/{file_name}"
-        self.save()
+        
 
     def __str__(self):
         return f" Shipment {self.shipment_id}"
@@ -593,17 +593,12 @@ class ShipmentTracking(models.Model):
 class ProofOfDelivery(models.Model):
     shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, null=True, blank=True, related_name="proofs")
     package = models.ForeignKey(Package, on_delete=models.CASCADE, null=True, blank=True, related_name="package_proofs")
-    image_pdf = models.FileField(upload_to="deliveries/proofs")
-    uploaded_at = models.DateTimeField(auto_now_add=True)
+    name = models.CharField(max_length=255, null=True)
+    identity_number = models.CharField(max_length=255, null=True, blank=True)
+    status = models.CharField(max_length=255, null=True)
+    note = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-
-    @property
-    def file_type(self):
-        if self.image_pdf.name.lower().endswith((".jpg", ".jpeg", ".png")):
-            return "image"
-        elif self.image_pdf.name.lower().endswith(".pdf"):
-            return "pdf"
-        return "unknown"
 
     def __str__(self):
         if self.shipment:

@@ -169,16 +169,17 @@ class DriverNotificationsView(generics.ListAPIView):
 
 
 class ProofofDeliveryView(APIView):
-    permission_classes = [ IsRider, IsAuthenticated ]
+    permission_classes = [ IsAuthenticated ]
 
     def post(self, request, id):
-        print(id)
+       
         try:
-            shipment = Shipment.objects.get(id=id)
+            shipment = Shipment.objects.get(shipment_id=id)
             print(shipment)
         except Shipment.DoesNotExist:
             return Response({ "success": False, "message": "Shipment not found."}, status=status.HTTP_404_NOT_FOUND)
         
+
         serializer = ProofOfDeliverySerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(shipment=shipment, uploaded_by=self.request.user)

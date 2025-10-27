@@ -1,6 +1,6 @@
 from django.urls import path
 from apps.deliveries.views import *
-
+from apps.deliveries.prints import generate_shipment_pdf, generate_package_pdf
 
 
 urlpatterns = [
@@ -14,5 +14,10 @@ urlpatterns = [
     path( "user_package_details/<slug:slug>/", CustomerPackageRetrieveEditDeleteView.as_view(), name="user_package_details", ),
     path( "intracity_pricing/", IntraCityPriceCalculationView.as_view(), name="intracity_pricing", ),
     path( "intercounty_pricing/", InterCountyPriceCalculator.as_view(), name="intercounty_pricing"), 
+
+
+    # print urls
+    path("shipments/print/", generate_shipment_pdf, name="generate_shipment_pdf", ),
+    path("packages/print/", generate_package_pdf, name="generate_package_pdf", ),
 ]
 

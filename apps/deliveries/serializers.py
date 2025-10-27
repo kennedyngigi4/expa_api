@@ -66,21 +66,14 @@ class InterCountyRouteSerializer(serializers.ModelSerializer):
 
 
 class ProofOfDeliverySerializer(serializers.ModelSerializer):
-    file_type = serializers.ReadOnlyField()
-    file_url = serializers.SerializerMethodField()
+    
 
     class Meta:
         model = ProofOfDelivery
         fields = [
-            "id", "shipment", "package", "image_pdf", "file_url", "file_type", "uploaded_at", "uploaded_by"
+            "id", "shipment", "package", "identity_number", "status", "name", "created_at", "note"
         ]
-        read_only_fields = ["id", "uploaded_at", "uploaded_by", "file_type"]
-
-    def get_file_url(self, obj):
-        request = self.context.get("request")
-        if obj.image_pdf and hasattr(obj.image_pdf, "url"):
-            return request.build_absolute_uri(obj.image_pdf.url)
-        return None
+        
     
 
 
@@ -115,7 +108,7 @@ class PackageSerializer(serializers.ModelSerializer):
             "length", "width", "height", "weight", "pickup_date", "description", "sender_name", "sender_phone", "sender_address", 
             "sender_latLng", "is_paid", "recipient_name", "recipient_phone", "recipient_address", "recipient_latLng", "requires_packaging",
             "package_id", "status", "created_by_role", "created_at", "fees", "rider_location", "payment_method", 
-            "package_proofs", "current_office", "manager_office_id"
+            "package_proofs", "current_office", "manager_office_id", "qrcode_svg"
         ]
         read_only_fields = [
             "id", "package_id", "current_handler", "delivery_stage_count", "current_stage"
@@ -252,15 +245,19 @@ class ShipmentSerializer(serializers.ModelSerializer):
 class ShipmentStageSerializers(serializers.ModelSerializer):
 
     driver = serializers.SerializerMethodField()
+    driver_phone = serializers.SerializerMethodField()
 
     class Meta:
         model = ShipmentStage
         fields = [
-            "shipment", "stage_number", "driver", "from_office", "to_office", "status", "created_at"
+            "shipment", "stage_number", "driver", "driver_phone", "from_office", "to_office", "status", "created_at"
         ]
 
     def get_driver(self, obj):
         return obj.driver.full_name
+    
+    def get_driver_phone(self, obj):
+        return obj.driver.phone
 
 
 

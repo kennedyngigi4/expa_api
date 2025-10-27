@@ -100,19 +100,9 @@ class RiderShipmentSerializer(serializers.ModelSerializer):
 
 
 class ProofOfDeliverySerializer(serializers.ModelSerializer):
-    file_type = serializers.ReadOnlyField()
-    file_url = serializers.SerializerMethodField()
-
     class Meta:
         model = ProofOfDelivery
         fields = [
-            "id", "shipment", "package", "image_pdf", "file_url", "file_type", "uploaded_at", "uploaded_by"
+            "id", "shipment", "package", "identity_number", "status", "name", "created_at", "note"
         ]
-        read_only_fields = ["id", "uploaded_at", "uploaded_by", "file_type"]
-
-    def get_file_url(self, obj):
-        request = self.context.get("request")
-        if obj.image_pdf and hasattr(obj.image_pdf, "url"):
-            return request.build_absolute_uri(obj.image_pdf.url)
-        return None
 
