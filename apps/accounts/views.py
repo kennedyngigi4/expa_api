@@ -82,7 +82,7 @@ class PasswordResetRequestView(APIView):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
 
 
-        reset_url = f"https://app.expa.co.ke/reset-password?uid={uid}&token={token}" 
+        reset_url = f"https://app.expa.co.ke/auth/reset-password?uid={uid}&token={token}" 
         send_mail(
             "Password Reset",
             f"Clivk the link to reset your password: {reset_url}",
