@@ -3,6 +3,7 @@ from apps.drivers.views import *
 
 
 urlpatterns = [
+    path("current/<uuid:rider_id>/location/", TrackedCurrentLocationView.as_view(),  name="rider-current-location"),
     path("statistics/", DriverStatistics.as_view(), name="statistics", ),
     path("stream-location/", DriverLocationUpdate.as_view(), name="stream-location"),
     path("register-token/", RegisterFCMToken.as_view(), name="register-token"),

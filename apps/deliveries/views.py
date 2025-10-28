@@ -124,6 +124,7 @@ class CustomerPackagesView(generics.ListAPIView):
         return Package.objects.filter(
             Q(created_by=user)
         ).distinct().order_by('-created_at')
+        
     
 
     

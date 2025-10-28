@@ -199,14 +199,13 @@ class ManagerCreateShipmentView(generics.ListCreateAPIView):
         if shipment_type == "pickup":
             serializer.save(
                 manager=user,
-                destination_office=office,  # destination office auto set for pickup
+                destination_office=office, 
             )
         else:
             serializer.save(manager=user)
 
     def post(self, request, *args, **kwargs):
-        print("Creating shipment .................")
-        print(request.data)
+        
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)

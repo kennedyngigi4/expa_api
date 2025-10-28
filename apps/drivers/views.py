@@ -15,6 +15,30 @@ from apps.drivers.services import *
 
 
 
+class TrackedCurrentLocationView(APIView):
+    def get(self, request, rider_id):
+        
+        try:
+            rider = User.objects.get(id=rider_id, role__in=["driver", "partner_rider"])
+        except User.DoesNotExist:
+            return Response({ "success": False,  "message": "Rider not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            location = rider.location
+        except DriverLocation.DoesNotExist:
+            return Response({ "success": False, "message": "Location not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+        data = {
+            "rider_id": str(rider.id),
+            "name": rider.full_name,
+            "lat": float(location.latitude),
+            "lng": float(location.longitude),
+            "updated_at": location.updated_at,
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
 class DriverStatistics(APIView):
     permission_classes = [ IsAuthenticated, IsRider ]
 
@@ -105,7 +129,7 @@ class AcceptDeliveryView(APIView):
         # Check if package already in shipment
         existing_shipment = Shipment.objects.filter(
             packages=package,
-            status__in=["created", "pending", "assigned", "in_transit"]
+            status__in=["created", "pending", "assigned", "in_transit", "with_courier"]
         ).first()
 
 
@@ -140,6 +164,7 @@ class AcceptDeliveryView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         package.status = "assigned"
+
         package.current_handler=courier
         package.save()
 
@@ -238,23 +263,23 @@ class ShipmentUpdateStatusView(APIView):
         
 
         if action == "in_transit":
-            shipment.status = "in_transit"
+            shipment.status = "with_courier"
             shipment.save(update_fields=["status"])
             
             # stages 
             ShipmentStage.objects.filter(
                 shipment=shipment, driver=courier, status__in=["created", "pending", "assigned"]
-            ).update(status="in_transit")
+            ).update(status="with_courier")
 
             # ShipmentPackages
             ShipmentPackage.objects.filter(
                 shipment=shipment
-            ).update(status="in_transit")
+            ).update(status="with_courier")
 
             # Packages
             Package.objects.filter(
                 shipments=shipment
-            ).update(status="in_transit")
+            ).update(status="with_courier")
 
         # Delivered
         elif action == "delivered":

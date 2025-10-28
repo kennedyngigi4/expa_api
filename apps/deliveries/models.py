@@ -195,6 +195,7 @@ class PackageStatus(models.TextChoices):
     pending = "pending", "pending"
     assigned = "assigned", "assigned"
     in_transit = "in_transit", "in_transit"
+    with_courier = "with_courier", "with_courier"
     in_office = "in_office", "in_office"
     delivered = "delivered", "delivered"
     received = "received", "received"
@@ -531,6 +532,7 @@ class ShipmentPackage(models.Model):
         ('pending', 'pending'),
         ('assigned', 'assigned'),
         ('in_transit', 'in_transit'),
+        ('with_courier', 'with_courier'),
         ('in_office', 'in_office'),
         ('delivered', 'delivered'),
         ('returned', 'Returned to Office'),

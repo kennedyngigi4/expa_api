@@ -133,7 +133,7 @@ class PackageSerializer(serializers.ModelSerializer):
     def get_rider_location(self, obj):
         shipment = obj.shipments.order_by("-assigned_at").first()
 
-        if not shipment or shipment.status != "in_transit":
+        if not shipment or shipment.status not in ["in_transit", "assigned", "with_courier"]:
             return None
         
         courier = shipment.courier
@@ -141,6 +141,7 @@ class PackageSerializer(serializers.ModelSerializer):
             return None
 
         data = {
+            "id": courier.id,
             "name": courier.full_name,
             "phone": courier.phone,
             "lat": None,
@@ -273,8 +274,8 @@ class ShipmentReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shipment
         fields = [
-            "id", "shipment_id","shipment_type", "packages", "origin_office", "originoffice", "destination_office", 
-            "destinationoffice", "status", "courier", "stages", "current_stage", "summary", "qrcode_svg", "assigned_at"
+            "id", "shipment_id","shipment_type", "packages", "origin_office", "pickup_location", "originoffice", "destination_office", 
+            "destinationoffice", "destination_location", "status", "courier", "stages", "current_stage", "summary", "qrcode_svg", "assigned_at"
         ]
 
 
