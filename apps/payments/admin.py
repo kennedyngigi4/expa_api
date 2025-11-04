@@ -4,5 +4,6 @@ from apps.payments.models import *
 
 
 admin.site.register(Invoice)
+admin.site.register(ConsolidatedInvoice)
 admin.site.register(Payment)
 admin.site.register(PaymentsLog)

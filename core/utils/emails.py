@@ -29,7 +29,7 @@ def send_order_creation_email(user, order):
 
 
 def send_order_creation_email_admin(user, order):
-    subject = f"Order #{order.package_id} Created Successfully"
+    subject = f"Order #{order.package_id} - from {order.sender_name}"
     html_message = render_to_string("deliveries/admin_package_creation_email.html", {"user": user, "order": order})
     plain_message = strip_tags(html_message)
     from_email = None

@@ -23,9 +23,10 @@ from django.utils.decorators import method_decorator
 
 
 
-
+from apps.accounts.permissions import IsAdmin
 from apps.payments.models import *
 from apps.payments.serializers import *
+from apps.payments.services import consolidated_invoices
 # Create your views here.
 
 
@@ -55,6 +56,10 @@ class InvoicesView(generics.ListAPIView):
 
         return queryset
 
+
+
+
+   
 
 
 def draw_status(canvas, doc, status):

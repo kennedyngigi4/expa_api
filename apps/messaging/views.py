@@ -1,8 +1,11 @@
-from django.shortcuts import render
-
+import requests 
+import urllib 
+import json
 from firebase_admin import messaging
 
-from rest_framework import generics
+from django.shortcuts import render
+from rest_framework import generics, status
+from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
@@ -58,4 +61,45 @@ def intracity_drivers_notification(drivers, title, body, data=None):
     for idx, resp in enumerate(response.responses):
         if not resp.success:
             print(f"❌ Error for token {tokens[idx]}: {resp.exception}")
+
+
+
+
+
+
+class SendSMSView(APIView):
+    def post(self, request):
+        url = "https://api.onfonmedia.co.ke/v1/sms/SendBulkSMS"
+        payload = {
+            "SenderId": "ExPa Parcel",
+            "MessageParameters": [
+                {"Number": "254701220024", "Text": "Test Message"},
+            ],
+            "ApiKey": " YlHirwKFLIDNbmaMZs8xQnv1p6o7qSXhVAgW3T2yG05kd94U",
+            "ClientId": " expaparcel"
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "AccessKey": "YlHirwKFLIDNbmaMZs8xQnv1p6o7qSXhVAgW3T2yG05kd94U",
+        }
+
+        try:
+            response = requests.post(url, data=json.dumps(payload), headers=headers)
+            # response = requests.post(url, data=payload, headers=headers)
+            response_data = response.json()
+            return Response(response_data, status=response.status_code)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+
+
+
+
+
+
+
 

@@ -395,8 +395,12 @@ class InterCountyPriceCalculator(APIView):
                         "success": False,
                         "message": "No matching tier for excess weight."
                     }, status=404)
-
-                total_price = chargeable_weight * tier.price_per_kg
+                
+                if tier.min_weight == 0:
+                    # First tier — flat rate
+                    total_price = tier.price_per_kg
+                else:
+                    total_price = chargeable_weight * tier.price_per_kg
             
 
             # Calculate pickup fee if required

@@ -187,6 +187,7 @@ class ProofofDeliveryView(APIView):
         print(serializer.errors)
         return Response({ "success": False, "message": serializer.errors }, status=status.HTTP_400_BAD_REQUEST)
     
+    
     def get(self, request, id):
         """Fetch all proofs of a shipment"""
         proofs = ProofOfDelivery.objects.filter(shipment=id)
