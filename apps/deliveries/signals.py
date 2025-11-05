@@ -76,8 +76,12 @@ def create_invoice(sender, instance, created, **kwargs):
                 NobukPayments(mpesa_number, sender_name, invoice_id, amount, "web").STKPush()
                 
                 # Send creation email
+                
                 send_order_creation_email(user, instance)
                 send_order_creation_email_admin(user, instance)
+
+                SendSMSView(instance.sender_phone, f"Dear {instance.sender_name}, your package (Ref: {instance.package_id}) has been successfully submitted to ExPa for delivery. We’ll notify you once it’s dispatched. Thank you for choosing ExPa Logistics.").post()
+                SendSMSView(instance.recipient_phone, f"Dear {instance.recipient_name}, a package (Ref: {instance.package_id}) has been sent to you via ExPa Logistics by {instance.sender_name}. We’ll update you once it’s out for delivery.").post()
             elif instance.payment_method == "card":
                 print("Card ")
         
@@ -126,3 +130,13 @@ def notify_assigned_courier(sender, instance, created, **kwargs):
             shipment=instance,
             notification_type="assignment",
         )
+
+
+
+
+
+
+
+
+
+

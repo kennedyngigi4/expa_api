@@ -15,6 +15,7 @@ from apps.messaging.models import *
 from apps.messaging.serializers import *
 from apps.drivers.models import *
 from apps.messaging.firebase import *
+from apps.messaging.utils import send_message
 # Create your views here.
 
 
@@ -67,31 +68,14 @@ def intracity_drivers_notification(drivers, title, body, data=None):
 
 
 
-class SendSMSView(APIView):
+class SendSMSView():
+    def __init__(self, phone, message):
+        self.phone = phone
+        self.message = message
+
     def post(self, request):
-        url = "https://api.onfonmedia.co.ke/v1/sms/SendBulkSMS"
-        payload = {
-            "SenderId": "ExPa Parcel",
-            "MessageParameters": [
-                {"Number": "254701220024", "Text": "Test Message"},
-            ],
-            "ApiKey": " YlHirwKFLIDNbmaMZs8xQnv1p6o7qSXhVAgW3T2yG05kd94U",
-            "ClientId": " expaparcel"
-        }
-
-        headers = {
-            "Content-Type": "application/json",
-            "AccessKey": "YlHirwKFLIDNbmaMZs8xQnv1p6o7qSXhVAgW3T2yG05kd94U",
-        }
-
-        try:
-            response = requests.post(url, data=json.dumps(payload), headers=headers)
-            # response = requests.post(url, data=payload, headers=headers)
-            response_data = response.json()
-            return Response(response_data, status=response.status_code)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        message = send_message(self.phone, self.message)
+        print(message)
 
 
 
