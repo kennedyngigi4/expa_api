@@ -12,6 +12,7 @@ from apps.drivers.models import *
 from apps.drivers.serializers import *
 from apps.accounts.models import User
 from apps.drivers.services import *
+from apps.drivers.tasks import send_withdrawal_request_to_nobuk
 
 
 
@@ -368,10 +369,10 @@ class WithdrawalWalletView(APIView):
             }, status=status.HTTP_404_NOT_FOUND)
 
         
-        if wallet.completed_deliveries_since_withdrawal < 10:
+        if wallet.completed_deliveries_since_withdrawal < 5:
             return Response({
                 "success": False,
-                "message": f"You need at least 10 completed deliveries before withdrawing. "
+                "message": f"You need at least 5 completed deliveries before withdrawing. "
                            f"Current: {wallet.completed_deliveries_since_withdrawal}"
             }, status=status.HTTP_400_BAD_REQUEST)
 
@@ -402,7 +403,7 @@ class WithdrawalWalletView(APIView):
         wallet.save()
 
         # send to Nobuk here
-        # send_withdrawal_request_to_nobuk.delay(transaction.id)
+        send_withdrawal_request_to_nobuk.delay(transaction.id)
 
         return Response({
             "success": True,

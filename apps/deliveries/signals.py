@@ -132,6 +132,19 @@ def notify_assigned_courier(sender, instance, created, **kwargs):
         )
 
 
+        # update all packages linked to the shipment
+        package_ids = ShipmentPackage.objects.filter(
+            shipment=instance
+        ).values_list("package_id", flat=True)
+
+        if package_ids:
+            Package.objects.filter(id__in=package_ids).update(
+                current_handler=instance.courier
+            )
+
+
+
+
 
 
 

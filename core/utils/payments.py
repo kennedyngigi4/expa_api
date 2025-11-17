@@ -5,7 +5,7 @@ from django.conf import settings
 class NobukPayments():
     api_url = "https://api.nobuk.africa"
 
-    def __init__(self, user_phone, user_name, order_id, amount, source):
+    def __init__(self, user_phone=None, user_name=None, order_id=None, amount=None, source=None, withdrawal_amount=None, withdrawal_id=None, rider_phone=None, rider_name=None):
 
         # Static org details
         self.api_key = settings.NOBUK_API_KEY
@@ -20,6 +20,13 @@ class NobukPayments():
         self.order_id = order_id
         self.amount = amount
         self.source = source
+
+
+        # Rider withdrawal details
+        self.withdrawal_amount = withdrawal_amount
+        self.withdrawal_id = withdrawal_id
+        self.rider_phone = rider_phone
+        self.rider_name = rider_name
 
 
     def STKPush(self):
@@ -58,5 +65,33 @@ class NobukPayments():
 
 
 
+    def Withdrawal(self):
+        if not all([self.withdrawal_amount, self.withdrawal_id, self.rider_phone, self.rider_name]):
+            raise ValueError("Missing required withdrawal fields")
+    
+        headers = {
+            "Content-Type": "application/json",
+            "org": self.org_id,
+            "apikey": self.api_key,
+        }
+
+        #payload
+        payload = {
+            "account": "EX Parcel Limited",
+            "amount": str(self.withdrawal_amount),
+            "request_id": str(self.withdrawal_id),
+            "msisdn": self.rider_phone,
+            "payment_reason": f"Rider Fees by {self.rider_name}"
+        }
 
 
+        try:
+            response = requests.post(
+                "https://lipia.nobuk.africa/b2c/initiate",
+                json=payload,
+                headers=headers
+            )
+
+            return response
+        except requests.exceptions.RequestException as e:
+            print("Request failed: ", e)

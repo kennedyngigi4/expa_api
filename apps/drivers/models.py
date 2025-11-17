@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.conf import settings
 
@@ -21,6 +22,7 @@ class DriverDevice(models.Model):
 
 
 class Wallet(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="wallet")
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     completed_deliveries_since_withdrawal = models.PositiveIntegerField(default=0)
@@ -52,9 +54,11 @@ class WalletTransaction(models.Model):
     STATUS_CHOICES = [
         ("pending", "Pending"),       
         ("completed", "Completed"),   
-        ("cancelled", "Cancelled"),   
+        ("cancelled", "Cancelled"),  
+        ("failed", "failed"),   
     ]
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="transactions")
     shipment = models.ForeignKey(Shipment, on_delete=models.SET_NULL, null=True, blank=True, related_name="wallet_transactions")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
