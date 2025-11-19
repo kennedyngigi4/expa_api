@@ -11,7 +11,7 @@ class PackageItemsSerializer(serializers.ModelSerializer):
     class Meta:
         model = PackageItem
         fields = [
-            "destination", "destination_latLng", "weight", "description", "price"
+            "destination", "destination_latLng", "weight", "description", "price", "no_items", "recipient_name", "recipient_phone"
         ]
 
 

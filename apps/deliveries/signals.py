@@ -13,6 +13,7 @@ from decimal import Decimal
 
 from core.utils.emails import send_order_creation_email, send_order_creation_email_admin
 from core.utils.payments import NobukPayments
+from apps.messaging.utils import send_message
 
 
 @receiver(post_save, sender=Package)
@@ -48,44 +49,52 @@ def _schedule_driver_notification(instance):
 
 @receiver(post_save, sender=Package)
 def create_invoice(sender, instance, created, **kwargs):
-    if not created:
-        return
+    if created:
+        from apps.deliveries.tasks import process_package_invoice
+        process_package_invoice.delay(instance.id)
+    #     return
     
-    user = instance.created_by
-    if hasattr(instance, 'invoice'):
-        return
     
-    status = 'unpaid' if user.account_type == "personal" else 'pending'
-    invoice = Invoice.objects.create(
-        user=user,
-        package=instance,
-        amount=Decimal(round(instance.fees, 3)),
-        status=status
-    )
+    # user = instance.created_by
+    # if hasattr(instance, 'invoice'):
+    #     return
+    
+    # status = 'unpaid' if user.account_type == "personal" else 'pending'
+    # invoice = Invoice.objects.create(
+    #     user=user,
+    #     package=instance,
+    #     amount=Decimal(round(instance.fees, 3)),
+    #     status=status
+    # )
 
-    invoice_id  = invoice.invoice_id
-    amount = str(int(invoice.amount))
-    if invoice_id and amount:
-        # Initiate STKPush payments 
+    # invoice_id  = invoice.invoice_id
+    # amount = str(int(invoice.amount))
+    # if invoice_id and amount:
+    #     # Initiate STKPush payments 
         
-        if user.account_type == "personal":
-            if instance.payment_method == "mpesa":
-                mpesa_number = instance.payment_phone
-                sender_name = str(user.full_name)
+    #     if user.account_type == "personal":
+    #         if instance.payment_method == "mpesa":
+    #             mpesa_number = instance.payment_phone
+    #             sender_name = str(user.full_name)
                 
-                NobukPayments(mpesa_number, sender_name, invoice_id, amount, "web").STKPush()
+    #             NobukPayments(mpesa_number, sender_name, invoice_id, amount, "web").STKPush()
                 
-                # Send creation email
+    #             # Send creation email
                 
-                send_order_creation_email(user, instance)
-                send_order_creation_email_admin(user, instance)
+    #             # send_order_creation_email(user, instance)
+    #             # send_order_creation_email_admin(user, instance)
 
-                SendSMSView(instance.sender_phone, f"Dear {instance.sender_name}, your package (Ref: {instance.package_id}) has been successfully submitted to ExPa for delivery. We’ll notify you once it’s dispatched. Thank you for choosing ExPa Logistics.").post()
-                SendSMSView(instance.recipient_phone, f"Dear {instance.recipient_name}, a package (Ref: {instance.package_id}) has been sent to you via ExPa Logistics by {instance.sender_name}. We’ll update you once it’s out for delivery.").post()
-            elif instance.payment_method == "card":
-                print("Card ")
+    #             print(instance.recipient_name)
+    #             print(instance.package_id)
+    #             print(instance.recipient_phone)
+
+                
+    #             send_message(instance.recipient_phone, f"Dear {instance.recipient_name}, a package (Ref: {instance.package_id}) has been sent to you via ExPa Logistics by {instance.sender_name}. We’ll update you once it’s out for delivery.").post()
+    #             send_message(instance.sender_phone, f"Dear Tester, your package (Ref: {instance.package_id}) has been successfully submitted to ExPa for delivery. We’ll notify you once it’s dispatched. Thank you for choosing ExPa Logistics.").post()
+    #         elif instance.payment_method == "card":
+    #             print("Card ")
         
-    send_notification(user, f"Order {instance.package_id}", "You order was submitted successfully.")
+    # send_notification(user, f"Order {instance.package_id}", "You order was submitted successfully.")
 
     
 

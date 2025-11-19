@@ -1,19 +1,77 @@
 import logging
+import datetime
 from celery import shared_task
 from celery.exceptions import MaxRetriesExceededError
 from core.utils.services import *
+from decimal import Decimal
 from django.utils import timezone
-import datetime
+
 from apps.deliveries.models import Package
+from apps.payments.models import Invoice
 from apps.messaging.views import intracity_drivers_notification
 from apps.messaging.utils import send_notification
 from django.db import transaction
-
+from core.utils.payments import NobukPayments
+from apps.messaging.utils import send_message
+from core.utils.emails import send_order_creation_email, send_order_creation_email_admin
 
 logger = logging.getLogger(__name__)
 
 # 2 minutes between rounds
 ROUND_DELAY = 120  
+
+
+
+@shared_task
+def process_package_invoice(package_id):
+    try:
+        package = Package.objects.get(id=package_id)
+        user = package.created_by
+
+        if hasattr(package, "invoice"):
+            return "Invoice already exists"
+        
+        status = "unpaid" if user.account_type == "personal" else "pending"
+        invoice = Invoice.objects.create(
+            user=user, package=package, amount=Decimal(round(package.fees, 3)), status=status
+        )
+        invoice_id = invoice.id
+        amount = str(int(invoice.amount))
+
+        print(package.payment_phone,
+                    package.sender_name,
+                    invoice_id,
+                    amount)
+
+        if user.account_type == "personal":
+            if package.payment_method == "mpesa":
+                payments = NobukPayments(
+                    package.payment_phone,
+                    package.sender_name,
+                    str(invoice_id),
+                    amount,
+                    "web"
+                ).STKPush()
+                print(payments)
+
+                # send sms
+                send_message(package.recipient_phone, f"Dear {package.recipient_name}, a package (Ref: {package.package_id}) has been sent to you via ExPa Logistics by {package.sender_name}. We’ll update you once it’s out for delivery.")
+                send_message(package.sender_phone, f"Dear {package.sender_name}, your package (Ref: {package.package_id}) has been successfully submitted to ExPa for delivery. We’ll notify you once it’s dispatched. Thank you for choosing ExPa Logistics.")
+                
+                # In-app notifications
+                send_notification(user=user, title=f"Order {package.package_id}", message="You order was submitted successfully.")
+
+            elif package.payment_method == "card":
+                print("Payment via card – task only.")
+        
+
+        # Emails
+        send_order_creation_email(user, package)
+        send_order_creation_email_admin(user, package)
+
+        return "Invoice and notifications processed"
+    except Package.DoesNotExist:
+        return "Package not found"
 
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=60)
@@ -70,6 +128,8 @@ def send_intracity_notifications(self, package_id, round_number=1, total_rounds=
             lambda: check_order_acceptance.apply_async(args=[package.id], countdown=ROUND_DELAY)
         )
         logger.info(f"🔚 All rounds sent for {package.package_id}. Escalation check scheduled.")
+
+
 
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=60)

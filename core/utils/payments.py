@@ -38,14 +38,14 @@ class NobukPayments():
         }
 
         payload = {
-            "paylink_id": self.paylink_id,
-            "org_id": self.org_id,
-            "sale_trx_code": self.sale_trx_code,
-            "collection_id": self.collection_id,
-            "pay_amount": self.amount,
+            "paylink_id": str(self.paylink_id),
+            "org_id": str(self.org_id),
+            "sale_trx_code": str(self.sale_trx_code),
+            "collection_id": str(self.collection_id),
+            "pay_amount": str(self.amount),
             "pay_number": self.user_phone,
             "pay_name": self.user_name,
-            "pay_details": self.order_id,
+            "pay_details": str(self.order_id),
             "link_source": self.source,
         }
 

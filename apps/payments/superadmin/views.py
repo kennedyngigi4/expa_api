@@ -39,6 +39,9 @@ class AdminConsolidationView(APIView):
         client_id = request.data.get("client_id")
         invoice_ids = request.data.get("invoice_ids")
 
+        print(client_id)
+        print(invoice_ids)
+
         if not client_id or not invoice_ids:
             return Response({ "success": False, "message": "Client and invoices are required." }, status=status.HTTP_400_BAD_REQUEST)
 
@@ -61,6 +64,7 @@ class AdminConsolidatedInvoices(APIView):
 
     def get(self, request):
         user = request.user
+
 
         consolidated_invoices = ConsolidatedInvoice.objects.filter(generated_by=user)
         serialized_invoices = ConsolidatedInvoiceSerializer(consolidated_invoices, many=True)

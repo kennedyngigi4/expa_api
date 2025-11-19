@@ -87,7 +87,7 @@ class PackageWriteSerializer(serializers.ModelSerializer):
             "package_id", "status", "requires_last_mile", "requires_pickup", "fees", "payment_phone", "pickup_now", "payment_method"
         ]
         read_only_fields = [
-            "id", "package_id", "current_handler", "delivery_stage_count", "current_stage", "cardholder_name", "card_number", "card_expiry", "card_cvc", "payment_method"
+            "id", "package_id", "current_handler", "delivery_stage_count", "current_stage", "cardholder_name", "card_number", "card_expiry", "card_cvc"
         ]
 
 

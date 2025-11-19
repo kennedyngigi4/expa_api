@@ -21,7 +21,7 @@ from apps.deliveries.serializers import *
 from apps.payments.models import *
 from core.utils.payments import NobukPayments
 from core.utils.emails import send_order_creation_email
-from apps.messaging.utils import send_notification
+
 
 gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
 # Create your views here.
@@ -92,6 +92,8 @@ class AddOrderView(generics.CreateAPIView):
                     sender_user=user,
                 )
 
+                
+
                 return Response({
                     "success": True,
                     "message": "Package created successfully.",
@@ -102,12 +104,14 @@ class AddOrderView(generics.CreateAPIView):
 
 
         except ValidationError as ve:
+            
             return Response({
                 "success": False,
                 "message": "Validation error occurred.",
                 "errors": ve.detail
             }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            
             return Response({
                 "success": False,
                 "message": f"An error occurred: {str(e)}"

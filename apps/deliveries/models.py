@@ -251,10 +251,10 @@ class Package(models.Model):
     sender_latLng = models.CharField(max_length=70, verbose_name=_("sender latitude,longitude"))
     
 
-    recipient_name = models.CharField(max_length=60, verbose_name=_("recipient name"))
-    recipient_phone = models.CharField(max_length=20, verbose_name=_("recipient phone"))
-    recipient_address = models.CharField(max_length=255, verbose_name=_("recipient location"))
-    recipient_latLng = models.CharField(max_length=70, verbose_name=_("recipient latitude,longitude"))
+    recipient_name = models.CharField(max_length=60, null=True, blank=True, verbose_name=_("recipient name"))
+    recipient_phone = models.CharField(max_length=20, null=True, blank=True, verbose_name=_("recipient phone"))
+    recipient_address = models.CharField(max_length=255, null=True, blank=True, verbose_name=_("recipient location"))
+    recipient_latLng = models.CharField(max_length=70, null=True, blank=True, verbose_name=_("recipient latitude,longitude"))
     origin_office = models.ForeignKey(Office, null=True, blank=True, on_delete=models.SET_NULL, related_name='origin_packages')
     destination_office = models.ForeignKey(Office, null=True, blank=True, on_delete=models.SET_NULL, related_name='destination_packages')
 
@@ -398,6 +398,10 @@ class PackageItem(models.Model):
     weight = models.CharField(max_length=20, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     price = models.CharField(max_length=40, null=True)
+    no_items = models.PositiveIntegerField(null=True)
+    recipient_name = models.CharField(max_length=100, null=True)
+    recipient_phone = models.CharField(max_length=20, null=True)
+    date_created = models.DateTimeField(auto_now_add=True, null=True)
 
     def __str__(self):
         return f"Item: {self.package.name} to {self.destination}"
