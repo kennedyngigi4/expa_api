@@ -22,7 +22,7 @@ ROUND_DELAY = 120
 
 
 
-@shared_task
+@shared_task(name="apps.deliveries.tasks.process_package_invoice")
 def process_package_invoice(package_id):
     try:
         package = Package.objects.get(id=package_id)
