@@ -55,8 +55,8 @@ def process_package_invoice(package_id):
                 print(payments)
 
                 # send sms
-                send_message(package.recipient_phone, f"Dear {package.recipient_name}, a package (Ref: {package.package_id}) has been sent to you via ExPa Logistics by {package.sender_name}. We’ll update you once it’s out for delivery.")
-                send_message(package.sender_phone, f"Dear {package.sender_name}, your package (Ref: {package.package_id}) has been successfully submitted to ExPa for delivery. We’ll notify you once it’s dispatched. Thank you for choosing ExPa Logistics.")
+                send_message(package.recipient_phone, f"Dear {package.recipient_name}, a package (Ref: {package.package_id}) has been sent to you via ExPa Logistics by {package.sender_name}. We will update you once it is out for delivery.")
+                send_message(package.sender_phone, f"Dear {package.sender_name}, your package (Ref: {package.package_id}) has been successfully submitted to ExPa for delivery. We will notify you once it is dispatched. Thank you for choosing ExPa Logistics.")
                 
                 # In-app notifications
                 send_notification(user=user, title=f"Order {package.package_id}", message="You order was submitted successfully.")

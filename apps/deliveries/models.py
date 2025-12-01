@@ -88,9 +88,15 @@ class IntraCityParcelPolicy(models.Model):
     
 
 class IntraCityPackagePricing(models.Model):
+    office = models.ForeignKey(Office, on_delete=models.CASCADE, null=True)
+
     min_weight = models.DecimalField(max_digits=10, decimal_places=2)  # in kg
     max_weight = models.DecimalField(max_digits=10, decimal_places=2)  # in kg
-    base_price = models.DecimalField(max_digits=12, decimal_places=2)  # for first 5km
+
+    min_distance = models.DecimalField(max_digits=10, decimal_places=2, null=True) #in kms
+    max_distance = models.DecimalField(max_digits=10, decimal_places=2, null=True) #in kms
+
+    price = models.DecimalField(max_digits=12, decimal_places=2, null=True)  # for first 5km
     extra_km_price = models.DecimalField(max_digits=12, decimal_places=3)  # per km after 5km
 
     def __str__(self):
