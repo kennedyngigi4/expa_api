@@ -25,6 +25,17 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://app.expa.co.ke",
 ]
+CSRF_TRUSTED_ORIGINS = [
+    "https://api.expa.co.ke",
+    "https://www.api.expa.co.ke",
+]
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
 
 # SIMPLE JWT SETTINGS
 SIMPLE_JWT = {
@@ -86,8 +97,9 @@ REST_FRAMEWORK = {
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
