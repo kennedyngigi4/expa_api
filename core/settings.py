@@ -22,12 +22,13 @@ ALLOWED_HOSTS = [
     'api.expa.co.ke','www.api.expa.co.ke', 'localhost', '127.0.0.1', '10.0.2.2'
 ]
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
     "https://app.expa.co.ke",
 ]
+CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     "https://api.expa.co.ke",
     "https://www.api.expa.co.ke",
+    "https://app.expa.co.ke",
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
