@@ -10,4 +10,6 @@ celerybeat-schedule
 celerybeat-schedule-shm
 celerybeat-schedule-wal
 
+*.pyc
+__pycache__/
 

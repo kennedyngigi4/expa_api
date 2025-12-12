@@ -38,10 +38,7 @@ def process_package_invoice(package_id):
         invoice_id = invoice.id
         amount = str(int(invoice.amount))
 
-        print(package.payment_phone,
-                    package.sender_name,
-                    invoice_id,
-                    amount)
+        
 
         if user.account_type == "personal":
             if package.payment_method == "mpesa":
@@ -52,7 +49,7 @@ def process_package_invoice(package_id):
                     amount,
                     "web"
                 ).STKPush()
-                print(payments)
+                
 
                 # send sms
                 send_message(package.recipient_phone, f"Dear {package.recipient_name}, a package (Ref: {package.package_id}) has been sent to you via ExPa Logistics by {package.sender_name}. We will update you once it is out for delivery.")
